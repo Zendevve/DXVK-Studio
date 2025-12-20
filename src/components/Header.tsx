@@ -29,8 +29,9 @@ export function Header({ onScan, onAddGame, isLoading, gameCount }: HeaderProps)
           className="btn btn-secondary"
           onClick={onAddGame}
           disabled={isLoading}
+          aria-label="Add game manually"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
@@ -40,15 +41,16 @@ export function Header({ onScan, onAddGame, isLoading, gameCount }: HeaderProps)
           className="btn btn-primary"
           onClick={onScan}
           disabled={isLoading}
+          aria-label="Scan Steam library for games"
         >
           {isLoading ? (
             <>
-              <span className="spinner" />
+              <span className="spinner" aria-hidden="true" />
               Scanning...
             </>
           ) : (
             <>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               Scan Steam

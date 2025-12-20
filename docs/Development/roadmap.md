@@ -49,9 +49,9 @@ Build the **definitive open-source DXVK management suite** for Windows that:
 
 | Task | Status | Feature Doc |
 |------|--------|-------------|
-| Visual dxvk.conf editor | 🔲 Pending | `docs/Features/config-editor.md` |
-| Preset system (per-game community configs) | 🔲 Pending | `docs/Features/presets.md` |
-| Real-time config preview (test window) | 🔲 Pending | `docs/Features/config-preview.md` |
+| Visual dxvk.conf editor | ✅ Complete | `docs/Features/config-editor.md` |
+| Preset system (Performance/Balanced/Quality) | ✅ Complete | `ConfigEditor.tsx` |
+| Real-time config preview (test window) | 🔲 Deferred | Post-MVP |
 
 ---
 

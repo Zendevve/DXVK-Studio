@@ -5,6 +5,7 @@ import { Header } from './components/Header'
 import { VersionManager } from './components/VersionManager'
 import { GameDetails } from './components/GameDetails'
 import { AddGameModal } from './components/AddGameModal'
+import { SettingsPage } from './components/SettingsPage'
 import './App.css'
 
 export interface Game {
@@ -41,6 +42,14 @@ function App() {
   useEffect(() => {
     loadInstalledVersions()
   }, [])
+
+  // Auto-dismiss errors after 5 seconds
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(null), 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [error])
 
   const loadInstalledVersions = async () => {
     try {
@@ -167,7 +176,7 @@ function App() {
     <div className="app">
       <Header
         onScan={handleScanLibrary}
-        onAddGame={handleAddGame}
+        onAddGame={() => setShowAddGame(true)}
         isLoading={isLoading}
         gameCount={games.length}
       />
@@ -192,15 +201,12 @@ function App() {
               games={games}
               selectedGame={selectedGame}
               onSelectGame={setSelectedGame}
-              onAddGame={handleAddGame}
+              onAddGame={() => setShowAddGame(true)}
             />
           )}
 
           {currentView === 'settings' && (
-            <div className="card">
-              <h2>Settings</h2>
-              <p className="text-secondary">Configuration options coming soon...</p>
-            </div>
+            <SettingsPage />
           )}
 
           {currentView === 'downloads' && (
