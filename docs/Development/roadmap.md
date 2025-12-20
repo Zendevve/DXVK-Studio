@@ -26,11 +26,11 @@ Build the **definitive open-source DXVK management suite** for Windows that:
 
 | Task | Status | Feature Doc |
 |------|--------|-------------|
-| PE Header Analysis (32/64-bit detection) | 🔲 Pending | `docs/Features/pe-analysis.md` |
-| DirectX version detection (D3D8/9/10/11) | 🔲 Pending | `docs/Features/dx-detection.md` |
-| DXVK variant management (Standard, Async, GPLAsync) | 🔲 Pending | `docs/Features/dxvk-variants.md` |
-| Symlink repository system | 🔲 Pending | `docs/Features/symlink-repo.md` |
-| dxvk.conf parser and generator | 🔲 Pending | `docs/Features/config-parser.md` |
+| PE Header Analysis (32/64-bit detection) | ✅ Complete | `docs/Features/pe-analysis.md` |
+| DirectX version detection (D3D8/9/10/11) | ✅ Complete | (in pe-parser.ts) |
+| DXVK variant management (Standard, Async, GPLAsync) | ✅ Complete | `docs/Features/dxvk-engine.md` |
+| Symlink repository system | 🔲 Deferred | Post-MVP |
+| dxvk.conf parser and generator | ✅ Complete | (config-parser.ts) |
 
 ---
 
