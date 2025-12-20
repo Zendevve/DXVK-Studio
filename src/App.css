@@ -1,0 +1,68 @@
+/* App Layout */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.app-content {
+  flex: 1;
+  padding: var(--space-6);
+  overflow-y: auto;
+}
+
+.app-sidebar-right {
+  width: 320px;
+  padding: var(--space-6);
+  background: var(--color-bg-secondary);
+  border-left: 1px solid var(--color-border-subtle);
+  overflow-y: auto;
+}
+
+/* Game Details */
+.game-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.game-details-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+}
+
+.game-details-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.game-details-section h3 {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.game-path {
+  font-size: var(--font-size-xs);
+  word-break: break-all;
+  padding: var(--space-3);
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-md);
+}
+
+.game-details-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: auto;
+  padding-top: var(--space-6);
+}

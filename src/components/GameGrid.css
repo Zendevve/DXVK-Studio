@@ -1,0 +1,130 @@
+.game-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.game-grid-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.game-grid-header h2 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+}
+
+.game-grid-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* Game Card - Fitts's Law: Large clickable area */
+.game-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.game-card:hover {
+  border-color: var(--color-border-default);
+  background: var(--color-bg-tertiary);
+}
+
+.game-card.selected {
+  border-color: var(--color-accent-primary);
+  background: rgba(99, 102, 241, 0.08);
+  box-shadow: var(--shadow-glow);
+}
+
+.game-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.game-card.selected .game-card-icon {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--color-accent-primary);
+}
+
+.game-card-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.game-card-title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.game-card-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+.game-card-arch,
+.game-card-dx {
+  padding: 2px 6px;
+  background: var(--color-bg-elevated);
+  border-radius: var(--radius-sm);
+}
+
+.game-card-status {
+  flex-shrink: 0;
+}
+
+/* Empty State */
+.game-grid-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  text-align: center;
+  max-width: 300px;
+}
+
+.empty-icon {
+  color: var(--color-text-tertiary);
+  opacity: 0.5;
+}
+
+.empty-state h2 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+}
+
+.empty-state p {
+  font-size: var(--font-size-sm);
+}
