@@ -384,7 +384,41 @@ function GameDetailView({
 }) {
   const [isInstalling, setIsInstalling] = useState(false)
   const [selectedFork, setSelectedFork] = useState<DxvkFork>('official')
-  const [selectedVersion, setSelectedVersion] = useState('2.4')
+  const [selectedVersion, setSelectedVersion] = useState('')
+  const [availableEngines, setAvailableEngines] = useState<Array<{
+    version: string
+    cached: boolean
+    downloadUrl: string
+  }>>([])
+  const [isLoadingEngines, setIsLoadingEngines] = useState(false)
+
+  // Fetch available engines when fork changes
+  useEffect(() => {
+    if (!isElectron) return
+
+    const fetchEngines = async () => {
+      setIsLoadingEngines(true)
+      try {
+        const engines = await window.electronAPI.getAvailableEngines(selectedFork)
+        setAvailableEngines(engines.map(e => ({
+          version: e.version,
+          cached: e.cached,
+          downloadUrl: e.downloadUrl
+        })))
+        // Auto-select first version if none selected
+        if (engines.length > 0 && !selectedVersion) {
+          setSelectedVersion(engines[0].version)
+        }
+      } catch (error) {
+        console.error('Failed to fetch engines:', error)
+        setAvailableEngines([])
+      } finally {
+        setIsLoadingEngines(false)
+      }
+    }
+
+    fetchEngines()
+  }, [selectedFork])
 
   const steamIconUrl = game.steamAppId
     ? `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steamAppId}/header.jpg`
@@ -519,13 +553,19 @@ function GameDetailView({
                   value={selectedVersion}
                   onChange={(e) => setSelectedVersion(e.target.value)}
                   className="input-field"
-                  disabled={game.dxvkStatus === 'active'}
+                  disabled={game.dxvkStatus === 'active' || isLoadingEngines}
                 >
-                  <option value="2.4">2.4 (Latest)</option>
-                  <option value="2.3.1">2.3.1</option>
-                  <option value="2.3">2.3</option>
-                  <option value="2.2">2.2</option>
-                  <option value="2.1">2.1</option>
+                  {isLoadingEngines ? (
+                    <option value="">Loading versions...</option>
+                  ) : availableEngines.length === 0 ? (
+                    <option value="">No versions available</option>
+                  ) : (
+                    availableEngines.map((engine, index) => (
+                      <option key={engine.version} value={engine.version}>
+                        {engine.version}{index === 0 ? ' (Latest)' : ''}{engine.cached ? ' ✓' : ''}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
             </div>
