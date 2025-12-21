@@ -1,66 +1,123 @@
 # DXVK Studio
 
-The definitive open-source DXVK management suite for Windows. Obsoletes WoJ DXVK Manager and script-based solutions by offering all premium features for free.
+> Professional DXVK management suite for Windows gamers
 
-## Features (MVP)
+![Platform: Windows](https://img.shields.io/badge/platform-Windows-0078D6?logo=windows)
+![Electron](https://img.shields.io/badge/Electron-33-47848F?logo=electron)
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
+![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-- 🎮 **Automatic Game Detection** - Scans Steam library automatically
-- 🔍 **Smart Architecture Detection** - PE header analysis for 32-bit/64-bit
-- ⚡ **One-Click Installation** - Install DXVK with a single click
-- ⚙️ **Visual Config Editor** - GUI for dxvk.conf settings
-- 🔄 **Version Management** - Download and manage multiple DXVK versions
+---
 
-## Tech Stack
+## 🎮 What is DXVK Studio?
 
-- **Runtime**: Electron 28+
-- **Frontend**: React 18 + TypeScript
-- **Build**: Vite
-- **Styling**: Vanilla CSS (Laws of UX compliant)
+DXVK Studio simplifies installing and managing [DXVK](https://github.com/doitsujin/dxvk) for Windows games. DXVK translates DirectX 9/10/11 calls to Vulkan, often improving performance on modern GPUs.
 
-## Development
+**Features:**
+- 🔍 Auto-detect Steam games
+- ⚡ One-click DXVK installation
+- 🔄 Multiple DXVK fork support (Official, GPL Async, NVAPI)
+- 💾 Automatic DLL backup & restore
+- 🎯 32-bit and 64-bit architecture detection
+- ⚠️ Anti-cheat detection warnings
 
+---
+
+## 📸 Screenshots
+
+*Coming soon*
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Windows 10/11
+- Modern GPU with Vulkan support
+- [Latest Vulkan drivers](https://www.vulkan.org/tools#vulkan-gpu-resources)
+
+### Installation
+
+1. Download the latest release from [Releases](https://github.com/your-repo/releases)
+2. Run the installer or use the portable version
+3. Launch DXVK Studio
+4. Click "Scan Steam" to discover your games
+5. Select a game and click "Install DXVK"
+
+---
+
+## 🛠️ Development
+
+### Setup
 ```bash
 # Install dependencies
 npm install
 
-# Start dev server
+# Start development mode
 npm run dev
-
-# Build for production
-npm run build
-
-# Run tests
-npm run test
 ```
 
-## Project Structure
+### Build
+```bash
+# Create production build
+npm run build
+```
 
+### Project Structure
 ```
 dxvk-studio/
-├── electron/           # Main process
-│   ├── main.ts        # Entry point
-│   ├── preload.ts     # IPC bridge
-│   └── services/      # Core engine
-├── src/               # Renderer process
-│   ├── components/    # React components
-│   ├── App.tsx        # Root component
-│   └── index.css      # Design system
-├── docs/              # Documentation (MCAF)
-│   ├── Features/      # Feature specifications
-│   ├── ADR/           # Architecture decisions
-│   ├── Testing/       # Test strategy
-│   └── Development/   # Setup guides
-└── AGENTS.md          # AI agent rules
+├── electron/           # Main process & services
+│   ├── main.ts
+│   ├── preload.ts
+│   └── services/
+├── src/                # React renderer
+│   ├── App.tsx
+│   └── shared/types.ts
+├── docs/               # Documentation
+│   ├── PRD.md
+│   └── ARCHITECTURE.md
+└── .agent/             # AI development rules
+    └── AGENTS.md
 ```
 
-## Documentation
+---
 
-This project follows [MCAF](https://mcaf.managed-code.com/) (Managed Code AI Framework).
+## ⚠️ Anti-Cheat Warning
 
-- [Development Roadmap](docs/Development/roadmap.md)
-- [Feature Docs](docs/Features/)
-- [Architecture Decisions](docs/ADR/)
+> **Do NOT use DXVK with online multiplayer games that use kernel-level anti-cheat!**
 
-## License
+DXVK Studio will detect and warn about:
+- EasyAntiCheat
+- BattlEye
+- Riot Vanguard
+- PunkBuster
 
-MIT
+Using DXVK with these games may result in **game bans**.
+
+---
+
+## 📖 Documentation
+
+- [Product Requirements](docs/PRD.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Agent Rules](.agent/AGENTS.md)
+
+---
+
+## 🤝 Contributing
+
+Contributions welcome! Please read [AGENTS.md](.agent/AGENTS.md) for development guidelines.
+
+---
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- [DXVK](https://github.com/doitsujin/dxvk) by doitsujin
+- [DXVK GPL Async](https://github.com/Ph42oN/dxvk-gplasync) by Ph42oN
+- [DXVK NVAPI](https://github.com/jp7677/dxvk-nvapi) by jp7677
