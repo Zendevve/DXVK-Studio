@@ -571,6 +571,166 @@ function SettingsView() {
   )
 }
 
+// Config Editor Modal Component
+function ConfigEditorModal({
+  isOpen,
+  gamePath,
+  onClose,
+  onSave
+}: {
+  isOpen: boolean
+  gamePath: string
+  onClose: () => void
+  onSave: () => void
+}) {
+  const [config, setConfig] = useState({
+    enableAsync: true,
+    numCompilerThreads: 0,
+    maxFrameLatency: 1,
+    enableHDR: false,
+    logLevel: 'warn' as 'none' | 'error' | 'warn' | 'info' | 'debug'
+  })
+  const [isSaving, setIsSaving] = useState(false)
+
+  const handleSave = async () => {
+    if (!isElectron) return
+
+    setIsSaving(true)
+    try {
+      await window.electronAPI.saveConfig(gamePath, config)
+      onSave()
+      onClose()
+    } catch (error) {
+      console.error('Failed to save config:', error)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 animate-fade-in">
+      <div className="glass-card max-w-lg w-full mx-4 p-6 max-h-[80vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-semibold text-studio-100">Configure DXVK</h3>
+          <button onClick={onClose} className="text-studio-400 hover:text-studio-200">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="space-y-6">
+          {/* Performance Section */}
+          <div>
+            <h4 className="text-sm font-medium text-accent-vulkan mb-3 uppercase tracking-wider">Performance</h4>
+            <div className="space-y-4">
+              <label className="flex items-center justify-between">
+                <div>
+                  <p className="text-studio-200">Async Shader Compilation</p>
+                  <p className="text-xs text-studio-500">Compile shaders in background (may cause stuttering)</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={config.enableAsync}
+                  onChange={(e) => setConfig({ ...config, enableAsync: e.target.checked })}
+                  className="w-5 h-5 rounded border-studio-600 bg-studio-800 text-accent-vulkan focus:ring-accent-vulkan"
+                />
+              </label>
+
+              <div>
+                <label className="block text-studio-200 mb-1">Compiler Threads</label>
+                <p className="text-xs text-studio-500 mb-2">0 = auto (recommended)</p>
+                <input
+                  type="number"
+                  min="0"
+                  max="16"
+                  value={config.numCompilerThreads}
+                  onChange={(e) => setConfig({ ...config, numCompilerThreads: parseInt(e.target.value) || 0 })}
+                  className="input-field w-24"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Frame Pacing Section */}
+          <div>
+            <h4 className="text-sm font-medium text-accent-vulkan mb-3 uppercase tracking-wider">Frame Pacing</h4>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-studio-200 mb-1">Max Frame Latency</label>
+                <p className="text-xs text-studio-500 mb-2">Lower = less input lag, higher = smoother frames</p>
+                <select
+                  value={config.maxFrameLatency}
+                  onChange={(e) => setConfig({ ...config, maxFrameLatency: parseInt(e.target.value) })}
+                  className="input-field w-32"
+                >
+                  <option value={1}>1 (Low latency)</option>
+                  <option value={2}>2</option>
+                  <option value={3}>3 (Smooth)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Display Section */}
+          <div>
+            <h4 className="text-sm font-medium text-accent-vulkan mb-3 uppercase tracking-wider">Display</h4>
+            <div className="space-y-4">
+              <label className="flex items-center justify-between">
+                <div>
+                  <p className="text-studio-200">Enable HDR</p>
+                  <p className="text-xs text-studio-500">Requires HDR-capable display</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={config.enableHDR}
+                  onChange={(e) => setConfig({ ...config, enableHDR: e.target.checked })}
+                  className="w-5 h-5 rounded border-studio-600 bg-studio-800 text-accent-vulkan focus:ring-accent-vulkan"
+                />
+              </label>
+            </div>
+          </div>
+
+          {/* Debug Section */}
+          <div>
+            <h4 className="text-sm font-medium text-accent-vulkan mb-3 uppercase tracking-wider">Debug</h4>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-studio-200 mb-1">Log Level</label>
+                <select
+                  value={config.logLevel}
+                  onChange={(e) => setConfig({ ...config, logLevel: e.target.value as typeof config.logLevel })}
+                  className="input-field w-40"
+                >
+                  <option value="none">None</option>
+                  <option value="error">Error</option>
+                  <option value="warn">Warning</option>
+                  <option value="info">Info</option>
+                  <option value="debug">Debug</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-studio-700">
+          <button onClick={onClose} className="btn-secondary">
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="btn-primary flex items-center gap-2"
+          >
+            {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+            Save Config
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // Game Card Component
 function GameCard({ game, onClick }: { game: Game; onClick: () => void }) {
   const steamIconUrl = game.steamAppId
@@ -661,6 +821,7 @@ function GameDetailView({
     detected: string[]
   } | null>(null)
   const [showAntiCheatOverride, setShowAntiCheatOverride] = useState(false)
+  const [showConfigModal, setShowConfigModal] = useState(false)
 
   // Scan for anti-cheat on mount
   useEffect(() => {
@@ -929,6 +1090,16 @@ function GameDetailView({
                 <FolderOpen className="w-4 h-4" />
                 Open Folder
               </button>
+
+              {game.dxvkStatus === 'active' && (
+                <button
+                  onClick={() => setShowConfigModal(true)}
+                  className="btn-secondary flex items-center gap-2"
+                >
+                  <Settings className="w-4 h-4" />
+                  Configure
+                </button>
+              )}
             </div>
 
             {game.architecture === 'unknown' && (
@@ -938,6 +1109,14 @@ function GameDetailView({
             )}
           </div>
         </div>
+
+        {/* Config Editor Modal */}
+        <ConfigEditorModal
+          isOpen={showConfigModal}
+          gamePath={game.path}
+          onClose={() => setShowConfigModal(false)}
+          onSave={() => console.log('Config saved')}
+        />
 
         {/* Right column - Status */}
         <div className="space-y-6">
