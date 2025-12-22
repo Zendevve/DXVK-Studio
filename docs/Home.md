@@ -25,8 +25,8 @@ Welcome to the DXVK Studio documentation.
 ---
 
 ## Features
-
-*Feature documentation will be added as features are formalized.*
+- [Engine Manager](Features/Engine-Manager.md) - Handling DXVK forks (Official, NVAPI, GPL Async)
+- [Monetization](Features/Monetization.md) - Support & Open Core strategy
 
 ---
 

@@ -120,6 +120,7 @@ If no new rule is detected → do not update the file.
 - **NEVER implement Linux/Wine/Proton support until v2.0** (Windows is the ONLY priority for MVP)
 - **NEVER auto-run DXVK on games with detected anti-cheat** without explicit user confirmation
 - **ALWAYS backup original DLLs BEFORE any modification**
+- **ALWAYS maintain context** - review past decisions and rules before acting
 
 ### Boundaries
 
@@ -128,6 +129,7 @@ If no new rule is detected → do not update the file.
 - Read AGENTS.md and docs before editing code
 - Run tests before commit
 - Use Windows file paths (`\\` or `/`)
+- **Preserve git history** - do not lose commits
 
 **Ask first:**
 
@@ -135,6 +137,13 @@ If no new rule is detected → do not update the file.
 - Adding new npm dependencies
 - Modifying type definitions in `shared/types.ts`
 - Deleting code files
+
+---
+
+## Monetization Strategy (Open Core)
+- **Community Edition**: Free, open source, build-from-source allowed.
+- **Support**: Optional donations (GitHub Sponsors, Ko-fi).
+- **Distribution**: Convenience binaries can be monetized, source remains open.
 
 ---
 
