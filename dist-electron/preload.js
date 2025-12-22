@@ -16,6 +16,8 @@ electron.contextBridge.exposeInMainWorld("electronAPI", {
   // ============================================
   scanAllGames: () => electron.ipcRenderer.invoke("games:scanAll"),
   checkSteamInstalled: () => electron.ipcRenderer.invoke("games:checkSteam"),
+  searchMetadata: (term) => electron.ipcRenderer.invoke("games:searchMetadata", term),
+  searchMetadataMultiple: (term) => electron.ipcRenderer.invoke("games:searchMetadataMultiple", term),
   // Deprecated - alias to scanAllGames
   scanSteamLibrary: () => electron.ipcRenderer.invoke("games:scanAll"),
   // ============================================

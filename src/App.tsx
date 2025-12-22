@@ -12,7 +12,9 @@ import {
   Check,
   X,
   Heart,
-  ExternalLink
+  ExternalLink,
+  Trash2,
+  Pencil
 } from 'lucide-react'
 import type { Game, DxvkFork } from './shared/types'
 
@@ -35,6 +37,13 @@ function App() {
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
   const [steamInstalled, setSteamInstalled] = useState<boolean | null>(null)
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null)
+
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<{
+    x: number
+    y: number
+    game: Game
+  } | null>(null)
 
   // Save games to localStorage when they change
   useEffect(() => {
@@ -119,8 +128,33 @@ function App() {
       // Extract game name from path
       const pathParts = exePath.split('\\')
       const exeName = pathParts[pathParts.length - 1]
-      const gameName = exeName.replace('.exe', '')
+      let gameName = exeName.replace('.exe', '')
       const gamePath = pathParts.slice(0, -1).join('\\')
+
+      // Get folder context
+      const parentFolder = pathParts[pathParts.length - 2] || ''
+      const grandParentFolder = pathParts[pathParts.length - 3] || ''
+      const folderContext = (parentFolder.toLowerCase() === 'bin' || parentFolder.toLowerCase() === 'binaries' || parentFolder.toLowerCase() === 'x64' || parentFolder.toLowerCase() === 'x86')
+        ? grandParentFolder
+        : parentFolder
+
+      // Smart Name Parsing: Use folder name if exe is generic or too short
+      const genericNames = ['launcher', 'game', 'start', 'client', 'app', 'play', 'setup', 'updater', 'boot', 'shipping', 'main', 'run']
+      const isGeneric = genericNames.some(n => gameName.toLowerCase().includes(n))
+      const isTooShort = gameName.length <= 4 // Short names like "wow", "ue4", "dx11" are ambiguous
+
+      if ((isGeneric || isTooShort) && folderContext) {
+        gameName = folderContext
+      }
+
+      // Metadata Fetching: Try game name first, then folder context as fallback
+      showNotification('info', `Analyzed ${analysis.architecture}-bit. Searching metadata...`)
+      let steamId = await window.electronAPI.searchMetadata(gameName)
+
+      // If no match and folder context is different, try folder name
+      if (!steamId && folderContext && folderContext !== gameName) {
+        steamId = await window.electronAPI.searchMetadata(folderContext)
+      }
 
       const newGame: Game = {
         id: `manual-${Date.now()}`,
@@ -129,17 +163,31 @@ function App() {
         executable: exeName,
         architecture: analysis.architecture,
         platform: 'manual',
+        steamAppId: steamId ? steamId.toString() : undefined, // Add Steam ID if found
         dxvkStatus: 'inactive',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }
 
       setGames(prev => [...prev, newGame])
-      showNotification('success', `Added ${gameName} (${analysis.architecture}-bit)`)
+
+      if (steamId) {
+        showNotification('success', `Added ${gameName} (Found Cover Art)`)
+      } else {
+        showNotification('success', `Added ${gameName} (${analysis.architecture}-bit)`)
+      }
+
     } catch (error) {
-      showNotification('error', 'Failed to analyze executable')
+      showNotification('error', 'Failed to analyze/add game')
       console.error(error)
     }
+  }, [showNotification])
+
+  // Remove game from library
+  const handleRemoveGame = useCallback((gameId: string) => {
+    setGames(prev => prev.filter(g => g.id !== gameId))
+    setSelectedGame(null)
+    showNotification('success', 'Game removed from library')
   }, [showNotification])
 
   const filteredGames = games.filter(game =>
@@ -281,6 +329,7 @@ function App() {
                   setGames(prev => prev.map(g => g.id === updated.id ? updated : g))
                   setSelectedGame(updated)
                 }}
+                onRemove={() => handleRemoveGame(selectedGame.id)}
               />
             ) : (
               <>
@@ -290,6 +339,7 @@ function App() {
                       key={game.id}
                       game={game}
                       onClick={() => setSelectedGame(game)}
+                      onContextMenu={(e, g) => setContextMenu({ x: e.clientX, y: e.clientY, game: g })}
                     />
                   ))}
                 </div>
@@ -304,6 +354,56 @@ function App() {
                         : 'Steam not detected. Click "Add Game" to manually add games.'}
                     </p>
                   </div>
+                )}
+
+                {/* Context Menu */}
+                {contextMenu && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setContextMenu(null)}
+                    />
+                    <div
+                      className="fixed z-50 glass-card py-1 min-w-[160px] shadow-xl animate-fade-in"
+                      style={{ left: contextMenu.x, top: contextMenu.y }}
+                    >
+                      <button
+                        onClick={async () => {
+                          if (isElectron) {
+                            await window.electronAPI.openPath(contextMenu.game.path)
+                          }
+                          setContextMenu(null)
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm text-studio-200 hover:bg-studio-700/50 flex items-center gap-2"
+                      >
+                        <FolderOpen className="w-4 h-4" />
+                        Open Folder
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedGame(contextMenu.game)
+                          setContextMenu(null)
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm text-studio-200 hover:bg-studio-700/50 flex items-center gap-2"
+                      >
+                        <Gamepad2 className="w-4 h-4" />
+                        View Details
+                      </button>
+                      <div className="border-t border-studio-700 my-1" />
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`Remove "${contextMenu.game.name}" from library?`)) {
+                            handleRemoveGame(contextMenu.game.id)
+                          }
+                          setContextMenu(null)
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm text-accent-danger hover:bg-accent-danger/10 flex items-center gap-2"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Remove from Library
+                      </button>
+                    </div>
+                  </>
                 )}
               </>
             )}
@@ -383,6 +483,10 @@ function EngineManagerView() {
 
   const handleDelete = async (fork: DxvkFork, version: string) => {
     if (!isElectron) return
+
+    // Confirmation dialog
+    const confirmed = window.confirm(`Delete ${fork} ${version}? This will remove the cached engine files.`)
+    if (!confirmed) return
 
     const key = `${fork}-${version}`
     setIsDeleting(key)
@@ -606,6 +710,7 @@ function SettingsView() {
           </div>
         </div>
 
+
         {/* About Section */}
         <div className="glass-card p-6">
           <h3 className="text-lg font-semibold text-studio-200 mb-4 flex items-center gap-2">
@@ -801,7 +906,15 @@ function ConfigEditorModal({
 }
 
 // Game Card Component
-function GameCard({ game, onClick }: { game: Game; onClick: () => void }) {
+function GameCard({
+  game,
+  onClick,
+  onContextMenu
+}: {
+  game: Game
+  onClick: () => void
+  onContextMenu: (e: React.MouseEvent, game: Game) => void
+}) {
   const steamIconUrl = game.steamAppId
     ? `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steamAppId}/header.jpg`
     : null
@@ -809,6 +922,10 @@ function GameCard({ game, onClick }: { game: Game; onClick: () => void }) {
   return (
     <div
       onClick={onClick}
+      onContextMenu={(e) => {
+        e.preventDefault()
+        onContextMenu(e, game)
+      }}
       className="glass-card-hover group cursor-pointer overflow-hidden"
     >
       {/* Game Art */}
@@ -867,12 +984,15 @@ function GameCard({ game, onClick }: { game: Game; onClick: () => void }) {
 function GameDetailView({
   game,
   onBack,
-  onUpdate
+  onUpdate,
+  onRemove
 }: {
   game: Game
   onBack: () => void
   onUpdate: (game: Game) => void
+  onRemove: () => void
 }) {
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
   const [isInstalling, setIsInstalling] = useState(false)
   const [installStatus, setInstallStatus] = useState('')
   const [selectedFork, setSelectedFork] = useState<DxvkFork>('official')
@@ -884,6 +1004,33 @@ function GameDetailView({
   }>>([])
   const [isLoadingEngines, setIsLoadingEngines] = useState(false)
 
+  // Edit mode state
+  const [isEditing, setIsEditing] = useState(false)
+  const [editName, setEditName] = useState(game.name)
+
+  // Steam search modal state
+  const [showSearchModal, setShowSearchModal] = useState(false)
+  const [searchTerm, setSearchTerm] = useState(game.name)
+  const [searchResults, setSearchResults] = useState<Array<{ id: number; name: string; imageUrl: string }>>([])
+  const [isSearching, setIsSearching] = useState(false)
+
+  // Debounced live search
+  useEffect(() => {
+    if (!showSearchModal || !isElectron || searchTerm.length < 2) return
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true)
+      try {
+        const results = await window.electronAPI.searchMetadataMultiple(searchTerm)
+        setSearchResults(results)
+      } finally {
+        setIsSearching(false)
+      }
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [searchTerm, showSearchModal])
+
   // Anti-cheat detection state
   const [antiCheatWarning, setAntiCheatWarning] = useState<{
     hasAntiCheat: boolean
@@ -892,6 +1039,7 @@ function GameDetailView({
   } | null>(null)
   const [showAntiCheatOverride, setShowAntiCheatOverride] = useState(false)
   const [showConfigModal, setShowConfigModal] = useState(false)
+
 
   // Scan for anti-cheat on mount
   useEffect(() => {
@@ -1056,8 +1204,67 @@ function GameDetailView({
                 </div>
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-studio-900/90 to-transparent" />
-              <div className="absolute bottom-4 left-4">
-                <h2 className="text-2xl font-bold text-white">{game.name}</h2>
+              <div className="absolute bottom-4 left-4 right-4">
+                {isEditing ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="input-field text-xl font-bold bg-studio-900/80 flex-1"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          onUpdate({ ...game, name: editName, updatedAt: new Date().toISOString() })
+                          setIsEditing(false)
+                        } else if (e.key === 'Escape') {
+                          setEditName(game.name)
+                          setIsEditing(false)
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={() => {
+                        onUpdate({ ...game, name: editName, updatedAt: new Date().toISOString() })
+                        setIsEditing(false)
+                      }}
+                      className="p-2 bg-accent-success/20 hover:bg-accent-success/30 rounded-lg text-accent-success"
+                    >
+                      <Check className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditName(game.name)
+                        setIsEditing(false)
+                      }}
+                      className="p-2 bg-studio-700/50 hover:bg-studio-700 rounded-lg text-studio-300"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-2xl font-bold text-white">{game.name}</h2>
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="p-1.5 bg-studio-800/50 hover:bg-studio-700 rounded-lg text-studio-400 hover:text-studio-200 transition-colors"
+                      title="Rename game"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSearchTerm(game.name)
+                        setSearchResults([])
+                        setShowSearchModal(true)
+                      }}
+                      className="p-1.5 bg-studio-800/50 hover:bg-studio-700 rounded-lg text-studio-400 hover:text-studio-200 transition-colors"
+                      title="Search Steam for cover art"
+                    >
+                      <Search className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
                 <p className="text-studio-400 text-sm mt-1">{game.path}</p>
               </div>
             </div>
@@ -1263,8 +1470,118 @@ function GameDetailView({
               </div>
             </div>
           </div>
+
+          {/* Danger Zone */}
+          <div className="glass-card p-6 border-accent-danger/20">
+            <h3 className="text-lg font-semibold text-accent-danger mb-4 flex items-center gap-2">
+              <Trash2 className="w-5 h-5" />
+              Danger Zone
+            </h3>
+            <p className="text-sm text-studio-400 mb-4">
+              Remove this game from your library. This won't delete game files.
+            </p>
+            <button
+              onClick={() => setShowRemoveConfirm(true)}
+              className="btn-secondary text-accent-danger hover:bg-accent-danger/10 border-accent-danger/30 flex items-center gap-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              Remove from Library
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Remove Confirmation Modal */}
+      {showRemoveConfirm && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 animate-fade-in">
+          <div className="glass-card max-w-md w-full mx-4 p-6">
+            <h3 className="text-xl font-semibold text-studio-100 mb-4">Remove Game?</h3>
+            <p className="text-studio-400 mb-6">
+              Are you sure you want to remove <strong className="text-studio-200">{game.name}</strong> from your library?
+              This won't delete any game files from your computer.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowRemoveConfirm(false)}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowRemoveConfirm(false)
+                  onRemove()
+                }}
+                className="btn-primary bg-accent-danger border-accent-danger hover:bg-accent-danger/80 flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Steam Search Modal */}
+      {showSearchModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 animate-fade-in">
+          <div className="glass-card max-w-lg w-full mx-4 p-6 max-h-[80vh] flex flex-col">
+            <h3 className="text-xl font-semibold text-studio-100 mb-4">Search Steam</h3>
+            <div className="mb-4">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="input-field w-full"
+                placeholder="Start typing to search..."
+                autoFocus
+              />
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-2 min-h-[200px]">
+              {searchResults.length === 0 && !isSearching && searchTerm.length >= 2 && (
+                <p className="text-studio-500 text-center py-8">No results found</p>
+              )}
+              {searchResults.length === 0 && !isSearching && searchTerm.length < 2 && (
+                <p className="text-studio-500 text-center py-8">Type at least 2 characters to search</p>
+              )}
+              {isSearching && (
+                <p className="text-studio-400 text-center py-8">Searching...</p>
+              )}
+              {searchResults.map((result) => (
+                <button
+                  key={result.id}
+                  onClick={() => {
+                    onUpdate({
+                      ...game,
+                      name: result.name,
+                      steamAppId: result.id.toString(),
+                      updatedAt: new Date().toISOString()
+                    })
+                    setShowSearchModal(false)
+                  }}
+                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-studio-700/50 transition-colors text-left"
+                >
+                  <img
+                    src={result.imageUrl}
+                    alt={result.name}
+                    className="w-16 h-9 object-cover rounded"
+                  />
+                  <span className="text-studio-200 flex-1 truncate">{result.name}</span>
+                  <span className="text-studio-500 text-xs">ID: {result.id}</span>
+                </button>
+              ))}
+            </div>
+            <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-studio-700">
+              <button
+                onClick={() => setShowSearchModal(false)}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -3,7 +3,7 @@ import { join, dirname, basename } from 'path'
 import { existsSync } from 'fs'
 
 // Services
-import { getAllSteamGames, findSteamPath } from './services/steam-scanner'
+import { getAllSteamGames, findSteamPath, searchSteamStore, searchSteamStoreMultiple } from './services/steam-scanner'
 import { findGogGames } from './services/gog-scanner'
 import { findEpicGames } from './services/epic-scanner'
 import { analyzeExecutable, findGameExecutables } from './services/pe-analyzer'
@@ -234,6 +234,14 @@ ipcMain.handle('games:scanAll', async () => {
     console.error('Failed to scan games:', error)
     return []
   }
+})
+
+ipcMain.handle('games:searchMetadata', async (_, term: string) => {
+  return searchSteamStore(term)
+})
+
+ipcMain.handle('games:searchMetadataMultiple', async (_, term: string) => {
+  return searchSteamStoreMultiple(term)
 })
 
 ipcMain.handle('games:checkSteam', async () => {

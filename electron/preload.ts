@@ -28,6 +28,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // ============================================
   scanAllGames: () => ipcRenderer.invoke('games:scanAll') as Promise<Partial<Game>[]>,
   checkSteamInstalled: () => ipcRenderer.invoke('games:checkSteam') as Promise<boolean>,
+  searchMetadata: (term: string) => ipcRenderer.invoke('games:searchMetadata', term) as Promise<number | null>,
+  searchMetadataMultiple: (term: string) => ipcRenderer.invoke('games:searchMetadataMultiple', term) as Promise<Array<{
+    id: number
+    name: string
+    imageUrl: string
+  }>>,
 
   // Deprecated - alias to scanAllGames
   scanSteamLibrary: () => ipcRenderer.invoke('games:scanAll') as Promise<Partial<Game>[]>,
@@ -137,6 +143,12 @@ declare global {
       scanAllGames: () => Promise<Partial<Game>[]>
       scanSteamLibrary: () => Promise<Partial<Game>[]> // Deprecated
       checkSteamInstalled: () => Promise<boolean>
+      searchMetadata: (term: string) => Promise<number | null>
+      searchMetadataMultiple: (term: string) => Promise<Array<{
+        id: number
+        name: string
+        imageUrl: string
+      }>>
 
       // PE Analysis
       analyzeExecutable: (path: string) => Promise<PEAnalysisResult>

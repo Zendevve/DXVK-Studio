@@ -58,10 +58,15 @@ I built DXVK Studio to solve this "maintenance hell." I wanted a tool that felt 
 - Node.js 18+ (for development)
 
 ### Installation
-You can download the latest pre-built installer from the [Releases](https://github.com/Zendevve/dxvk-studio/releases) page.
 
-### Running Locally
-To build the project from source:
+We offer two ways to get DXVK Studio:
+
+**1. 💎 Support Development (Recommended)**
+Get the convenient auto-installer and support the project.
+[![Buy on Gumroad](https://img.shields.io/badge/Gumroad-Buy%20Installer-ff90e8?style=for-the-badge&logo=gumroad&logoColor=black)](https://gumroad.com/l/placeholder)
+
+**2. 🛠️ Build from Source (Free)**
+If you prefer to compile it yourself:
 
 1. Clone the repository:
    ```bash
@@ -74,14 +79,10 @@ To build the project from source:
    npm install
    ```
 
-3. Run the development server:
-   ```bash
-   npm run dev
-   ```
-
-4. Build for production:
+3. Build and Run:
    ```bash
    npm run build
+   # executable will be in release/ folder
    ```
 
 ## What's Inside?

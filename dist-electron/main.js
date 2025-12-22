@@ -3,8 +3,11 @@ const electron = require("electron");
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
-const tar = require("tar");
+const child_process = require("child_process");
+const util = require("util");
 const crypto = require("crypto");
+const node_crypto = require("node:crypto");
+const tar = require("tar");
 const STEAM_PATHS = [
   "C:\\Program Files (x86)\\Steam",
   "C:\\Program Files\\Steam",
@@ -142,6 +145,244 @@ function scanAllSteamLibraries() {
 function getAllSteamGames() {
   const libraries = scanAllSteamLibraries();
   return libraries.flatMap((lib) => lib.apps);
+}
+function normalizeSearchTerm(term) {
+  const variations = [term];
+  const knownAbbrevs = ["LEGO", "LOTR", "GTA", "COD", "NFS", "NBA", "NFL", "WWE", "DMC", "MGS", "AOE", "CIV"];
+  if (term === term.toUpperCase() && term.length > 4) {
+    let allCapsSplit = term;
+    for (const abbr of knownAbbrevs) {
+      if (term.includes(abbr) && term !== abbr) {
+        allCapsSplit = allCapsSplit.replace(new RegExp(`(${abbr})`, "g"), " $1 ").trim().replace(/\s+/g, " ");
+      }
+    }
+    if (allCapsSplit !== term) {
+      variations.push(allCapsSplit);
+    }
+  }
+  const split = term.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2");
+  if (split !== term) {
+    variations.push(split);
+  }
+  const abbreviations = {
+    "LOTR": "Lord of the Rings",
+    "LEGO": "LEGO",
+    "GTA": "Grand Theft Auto",
+    "COD": "Call of Duty",
+    "NFS": "Need for Speed",
+    "FIFA": "FIFA",
+    "NBA": "NBA",
+    "NFL": "NFL",
+    "WWE": "WWE",
+    "RE": "Resident Evil",
+    "DMC": "Devil May Cry",
+    "MGS": "Metal Gear Solid",
+    "FF": "Final Fantasy",
+    "KH": "Kingdom Hearts",
+    "AC": "Assassins Creed",
+    "FC": "Far Cry",
+    "BF": "Battlefield",
+    "TW": "Total War",
+    "AOE": "Age of Empires",
+    "CIV": "Civilization",
+    "WOW": "World of Warcraft",
+    "DOTA": "Dota",
+    "LOL": "League of Legends",
+    "CS": "Counter Strike",
+    "TF": "Team Fortress",
+    "HL": "Half Life",
+    "L4D": "Left 4 Dead"
+  };
+  const basesForExpansion = Array.from(/* @__PURE__ */ new Set([term, ...variations.slice(1)]));
+  for (const base of basesForExpansion) {
+    let expanded = base;
+    for (const [abbr, full] of Object.entries(abbreviations)) {
+      const regex = new RegExp(`\\b${abbr}\\b`, "gi");
+      if (regex.test(expanded)) {
+        expanded = expanded.replace(new RegExp(`\\b${abbr}\\b`, "gi"), full);
+      }
+    }
+    if (expanded !== base && !variations.includes(expanded)) {
+      variations.push(expanded);
+    }
+  }
+  const cleaned = term.replace(/^(The|A)\s+/i, "").replace(/\s*(Game|Edition|Remastered|Remake|HD|Definitive|GOTY)$/i, "");
+  if (cleaned !== term && cleaned.length > 2) {
+    variations.push(cleaned);
+  }
+  return Array.from(new Set(variations));
+}
+async function searchSteamStore(term) {
+  if (!term || term.length < 2) return null;
+  const variations = normalizeSearchTerm(term);
+  for (const searchTerm of variations) {
+    try {
+      const url = `https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(searchTerm)}&l=english&cc=US`;
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": "DXVK-Studio"
+        }
+      });
+      if (!response.ok) continue;
+      const data = await response.json();
+      if (data.items && data.items.length > 0) {
+        console.log(`Steam search: "${term}" → "${searchTerm}" found: ${data.items[0].name}`);
+        return data.items[0].id;
+      }
+    } catch (error) {
+      console.warn(`Failed to search Steam Store for "${searchTerm}":`, error);
+    }
+  }
+  return null;
+}
+async function searchSteamStoreMultiple(term) {
+  if (!term || term.length < 2) return [];
+  try {
+    const url = `https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(term)}&l=english&cc=US`;
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "DXVK-Studio"
+      }
+    });
+    if (!response.ok) return [];
+    const data = await response.json();
+    if (!data.items) return [];
+    return data.items.slice(0, 10).map((item) => ({
+      id: item.id,
+      name: item.name,
+      // Use Steam header image (460x215) for better quality
+      imageUrl: `https://steamcdn-a.akamaihd.net/steam/apps/${item.id}/header.jpg`
+    }));
+  } catch (error) {
+    console.warn(`Failed to search Steam Store for "${term}":`, error);
+    return [];
+  }
+}
+const execAsync = util.promisify(child_process.exec);
+const GOG_REGISTRY_KEY = "HKLM\\SOFTWARE\\WOW6432Node\\GOG.com\\Games";
+async function findGogGames() {
+  var _a;
+  const games = [];
+  try {
+    const { stdout } = await execAsync(`reg query "${GOG_REGISTRY_KEY}"`);
+    const lines = stdout.split("\n").filter((line) => line.trim().length > 0);
+    const gameKeys = lines.filter((line) => line.includes("GOG.com\\Games\\"));
+    for (const key of gameKeys) {
+      try {
+        const gameId = (_a = key.split("\\").pop()) == null ? void 0 : _a.trim();
+        if (!gameId) continue;
+        const { stdout: details } = await execAsync(`reg query "${key.trim()}" /s`);
+        const pathMatch = details.match(/\s+path\s+REG_SZ\s+(.+)/i);
+        const exeMatch = details.match(/\s+exe\s+REG_SZ\s+(.+)/i);
+        const nameMatch = details.match(/\s+gameName\s+REG_SZ\s+(.+)/i) || details.match(/\s+displayName\s+REG_SZ\s+(.+)/i);
+        if (pathMatch && exeMatch) {
+          const installDir = pathMatch[1].trim();
+          const exePath = path.join(installDir, exeMatch[1].trim());
+          const name = nameMatch ? nameMatch[1].trim() : `GOG Game ${gameId}`;
+          if (fs.existsSync(exePath)) {
+            games.push({
+              id: `gog-${crypto.randomUUID()}`,
+              name,
+              path: installDir,
+              // Legacy support
+              executable: exePath,
+              // Legacy support
+              platform: "gog",
+              dxvkStatus: "inactive",
+              createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+              updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+              architecture: "unknown"
+              // Will be analyzed later
+            });
+          }
+        }
+      } catch (err) {
+        console.warn(`Failed to parse GOG game key ${key}:`, err);
+      }
+    }
+  } catch (error) {
+    if (error.code !== 1) {
+      console.error("Error scanning GOG registry:", error);
+    }
+  }
+  return games;
+}
+const byteToHex = [];
+for (let i = 0; i < 256; ++i) {
+  byteToHex.push((i + 256).toString(16).slice(1));
+}
+function unsafeStringify(arr, offset = 0) {
+  return (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + "-" + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + "-" + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + "-" + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + "-" + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase();
+}
+const rnds8Pool = new Uint8Array(256);
+let poolPtr = rnds8Pool.length;
+function rng() {
+  if (poolPtr > rnds8Pool.length - 16) {
+    node_crypto.randomFillSync(rnds8Pool);
+    poolPtr = 0;
+  }
+  return rnds8Pool.slice(poolPtr, poolPtr += 16);
+}
+const native = { randomUUID: node_crypto.randomUUID };
+function _v4(options, buf, offset) {
+  var _a;
+  options = options || {};
+  const rnds = options.random ?? ((_a = options.rng) == null ? void 0 : _a.call(options)) ?? rng();
+  if (rnds.length < 16) {
+    throw new Error("Random bytes length must be >= 16");
+  }
+  rnds[6] = rnds[6] & 15 | 64;
+  rnds[8] = rnds[8] & 63 | 128;
+  return unsafeStringify(rnds);
+}
+function v4(options, buf, offset) {
+  if (native.randomUUID && true && !options) {
+    return native.randomUUID();
+  }
+  return _v4(options);
+}
+function findEpicGames() {
+  const games = [];
+  const programData = process.env.ProgramData || "C:\\ProgramData";
+  const manifestsPath = path.join(programData, "Epic", "EpicGamesLauncher", "Data", "Manifests");
+  if (!fs.existsSync(manifestsPath)) {
+    return [];
+  }
+  try {
+    const files = fs.readdirSync(manifestsPath);
+    for (const file of files) {
+      if (file.endsWith(".item")) {
+        try {
+          const content = fs.readFileSync(path.join(manifestsPath, file), "utf-8");
+          const manifest = JSON.parse(content);
+          const { DisplayName, InstallLocation, LaunchExecutable } = manifest;
+          if (DisplayName && InstallLocation && LaunchExecutable) {
+            const installDir = InstallLocation;
+            const exePath = path.join(installDir, LaunchExecutable);
+            if (fs.existsSync(exePath)) {
+              games.push({
+                id: `epic-${v4()}`,
+                name: DisplayName,
+                path: installDir,
+                executable: exePath,
+                platform: "epic",
+                dxvkStatus: "inactive",
+                createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+                updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+                architecture: "unknown"
+                // Will be analyzed
+              });
+            }
+          }
+        } catch (err) {
+          console.warn(`Failed to parse Epic manifest ${file}:`, err);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Failed to scan Epic manifests:", error);
+  }
+  return games;
 }
 const PE_MACHINE_I386 = 332;
 const PE_MACHINE_AMD64 = 34404;
@@ -804,50 +1045,93 @@ electron.ipcMain.handle("fs:exists", async (_, path2) => {
 electron.ipcMain.handle("shell:openPath", async (_, path2) => {
   return electron.shell.openPath(path2);
 });
-electron.ipcMain.handle("games:scanSteam", async () => {
+electron.ipcMain.handle("games:scanAll", async () => {
   try {
     const steamApps = getAllSteamGames();
-    const games = await Promise.all(
+    const gogGames = await findGogGames();
+    const epicGames = findEpicGames();
+    const analyze = (gamePath, mainExe) => {
+      const exePath = mainExe ? path.join(gamePath, mainExe) : "";
+      let architecture = "unknown";
+      if (exePath && fs.existsSync(exePath)) {
+        const analysis = analyzeExecutable(exePath);
+        architecture = analysis.architecture;
+      }
+      let dxvkStatus = "inactive";
+      let dxvkVersion;
+      let dxvkFork;
+      if (isDxvkInstalled(gamePath)) {
+        const installed = getInstalledVersion(gamePath);
+        const integrity = checkIntegrity(gamePath);
+        if (installed) {
+          dxvkVersion = installed.version;
+          dxvkFork = installed.fork;
+        }
+        dxvkStatus = integrity === "ok" ? "active" : integrity;
+      }
+      return { architecture, dxvkStatus, dxvkVersion, dxvkFork };
+    };
+    const processedSteam = await Promise.all(
       steamApps.map(async (app2) => {
         const executables = findGameExecutables(app2.fullPath);
         const mainExe = executables[0] || "";
-        const exePath = mainExe ? path.join(app2.fullPath, mainExe) : "";
-        let architecture = "unknown";
-        if (exePath && fs.existsSync(exePath)) {
-          const analysis = analyzeExecutable(exePath);
-          architecture = analysis.architecture;
-        }
-        let dxvkStatus = "inactive";
-        let dxvkVersion;
-        let dxvkFork;
-        if (isDxvkInstalled(app2.fullPath)) {
-          const installed = getInstalledVersion(app2.fullPath);
-          const integrity = checkIntegrity(app2.fullPath);
-          if (installed) {
-            dxvkVersion = installed.version;
-            dxvkFork = installed.fork;
-          }
-          dxvkStatus = integrity === "ok" ? "active" : integrity;
-        }
+        const analysis = analyze(app2.fullPath, mainExe);
         return {
           id: `steam-${app2.appId}`,
           name: app2.name,
           path: app2.fullPath,
           executable: mainExe,
-          architecture,
+          architecture: analysis.architecture,
           platform: "steam",
           steamAppId: app2.appId,
-          dxvkStatus,
-          dxvkVersion,
-          dxvkFork
+          dxvkStatus: analysis.dxvkStatus,
+          dxvkVersion: analysis.dxvkVersion,
+          dxvkFork: analysis.dxvkFork,
+          createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+          updatedAt: (/* @__PURE__ */ new Date()).toISOString()
         };
       })
     );
-    return games;
+    const processedGog = await Promise.all(
+      gogGames.map(async (game) => {
+        const mainExe = game.executable ? path.basename(game.executable) : "";
+        const analysis = analyze(game.path, mainExe);
+        return {
+          ...game,
+          // Already has id, name, path
+          executable: mainExe,
+          architecture: analysis.architecture,
+          dxvkStatus: analysis.dxvkStatus,
+          dxvkVersion: analysis.dxvkVersion,
+          dxvkFork: analysis.dxvkFork
+        };
+      })
+    );
+    const processedEpic = await Promise.all(
+      epicGames.map(async (game) => {
+        const mainExe = game.executable ? path.basename(game.executable) : "";
+        const analysis = analyze(game.path, mainExe);
+        return {
+          ...game,
+          executable: mainExe,
+          architecture: analysis.architecture,
+          dxvkStatus: analysis.dxvkStatus,
+          dxvkVersion: analysis.dxvkVersion,
+          dxvkFork: analysis.dxvkFork
+        };
+      })
+    );
+    return [...processedSteam, ...processedGog, ...processedEpic];
   } catch (error) {
-    console.error("Failed to scan Steam library:", error);
+    console.error("Failed to scan games:", error);
     return [];
   }
+});
+electron.ipcMain.handle("games:searchMetadata", async (_, term) => {
+  return searchSteamStore(term);
+});
+electron.ipcMain.handle("games:searchMetadataMultiple", async (_, term) => {
+  return searchSteamStoreMultiple(term);
 });
 electron.ipcMain.handle("games:checkSteam", async () => {
   return findSteamPath() !== null;

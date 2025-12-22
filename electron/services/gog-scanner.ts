@@ -3,7 +3,7 @@ import { promisify } from 'util'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import type { Game } from '../../src/shared/types'
-import { v4 as uuidv4 } from 'uuid'
+import { randomUUID } from 'crypto'
 
 const execAsync = promisify(exec)
 
@@ -49,7 +49,7 @@ export async function findGogGames(): Promise<Game[]> {
 
           if (existsSync(exePath)) {
             games.push({
-              id: uuidv4(),
+              id: `gog-${randomUUID()}`,
               name,
               path: installDir, // Legacy support
               executable: exePath, // Legacy support

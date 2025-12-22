@@ -214,3 +214,172 @@ export function getAllSteamGames(): SteamApp[] {
   const libraries = scanAllSteamLibraries()
   return libraries.flatMap(lib => lib.apps)
 }
+
+/**
+ * Normalize a game name for better Steam search results
+ * Handles camelCase, PascalCase, abbreviations, and common patterns
+ */
+function normalizeSearchTerm(term: string): string[] {
+  const variations: string[] = [term]
+
+  // Known abbreviations to look for in all-caps strings
+  const knownAbbrevs = ['LEGO', 'LOTR', 'GTA', 'COD', 'NFS', 'NBA', 'NFL', 'WWE', 'DMC', 'MGS', 'AOE', 'CIV']
+
+  // Handle all-caps by looking for known abbreviations: "LEGOLOTR" → "LEGO LOTR"
+  if (term === term.toUpperCase() && term.length > 4) {
+    let allCapsSplit = term
+    for (const abbr of knownAbbrevs) {
+      if (term.includes(abbr) && term !== abbr) {
+        // Insert space before/after the abbreviation
+        allCapsSplit = allCapsSplit.replace(new RegExp(`(${abbr})`, 'g'), ' $1 ').trim().replace(/\s+/g, ' ')
+      }
+    }
+    if (allCapsSplit !== term) {
+      variations.push(allCapsSplit)
+    }
+  }
+
+  // Split camelCase/PascalCase: "BlackOps" → "Black Ops"
+  const split = term.replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+  if (split !== term) {
+    variations.push(split)
+  }
+
+  // Common abbreviation expansions
+  const abbreviations: Record<string, string> = {
+    'LOTR': 'Lord of the Rings',
+    'LEGO': 'LEGO',
+    'GTA': 'Grand Theft Auto',
+    'COD': 'Call of Duty',
+    'NFS': 'Need for Speed',
+    'FIFA': 'FIFA',
+    'NBA': 'NBA',
+    'NFL': 'NFL',
+    'WWE': 'WWE',
+    'RE': 'Resident Evil',
+    'DMC': 'Devil May Cry',
+    'MGS': 'Metal Gear Solid',
+    'FF': 'Final Fantasy',
+    'KH': 'Kingdom Hearts',
+    'AC': 'Assassins Creed',
+    'FC': 'Far Cry',
+    'BF': 'Battlefield',
+    'TW': 'Total War',
+    'AOE': 'Age of Empires',
+    'CIV': 'Civilization',
+    'WOW': 'World of Warcraft',
+    'DOTA': 'Dota',
+    'LOL': 'League of Legends',
+    'CS': 'Counter Strike',
+    'TF': 'Team Fortress',
+    'HL': 'Half Life',
+    'L4D': 'Left 4 Dead'
+  }
+
+  // Try expanding abbreviations in all split variations
+  const basesForExpansion = Array.from(new Set([term, ...variations.slice(1)]))
+  for (const base of basesForExpansion) {
+    let expanded = base
+    for (const [abbr, full] of Object.entries(abbreviations)) {
+      const regex = new RegExp(`\\b${abbr}\\b`, 'gi')
+      if (regex.test(expanded)) {
+        expanded = expanded.replace(new RegExp(`\\b${abbr}\\b`, 'gi'), full)
+      }
+    }
+    if (expanded !== base && !variations.includes(expanded)) {
+      variations.push(expanded)
+    }
+  }
+
+  // Remove common suffixes/prefixes
+  const cleaned = term
+    .replace(/^(The|A)\s+/i, '')
+    .replace(/\s*(Game|Edition|Remastered|Remake|HD|Definitive|GOTY)$/i, '')
+  if (cleaned !== term && cleaned.length > 2) {
+    variations.push(cleaned)
+  }
+
+  // Return unique variations
+  return Array.from(new Set(variations))
+}
+
+/**
+ * Search local Steam Store API for App ID
+ * Tries multiple search term variations for better matching
+ */
+export async function searchSteamStore(term: string): Promise<number | null> {
+  if (!term || term.length < 2) return null
+
+  const variations = normalizeSearchTerm(term)
+
+  for (const searchTerm of variations) {
+    try {
+      const url = `https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(searchTerm)}&l=english&cc=US`
+
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'DXVK-Studio'
+        }
+      })
+
+      if (!response.ok) continue
+
+      const data = await response.json() as { items?: Array<{ id: number; name: string }> }
+      if (data.items && data.items.length > 0) {
+        console.log(`Steam search: "${term}" → "${searchTerm}" found: ${data.items[0].name}`)
+        return data.items[0].id
+      }
+    } catch (error) {
+      console.warn(`Failed to search Steam Store for "${searchTerm}":`, error)
+    }
+  }
+
+  return null
+}
+
+/**
+ * Search Steam Store and return multiple results for user selection
+ */
+export interface SteamSearchResult {
+  id: number
+  name: string
+  imageUrl: string
+}
+
+export async function searchSteamStoreMultiple(term: string): Promise<SteamSearchResult[]> {
+  if (!term || term.length < 2) return []
+
+  try {
+    const url = `https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(term)}&l=english&cc=US`
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'DXVK-Studio'
+      }
+    })
+
+    if (!response.ok) return []
+
+    const data = await response.json() as {
+      items?: Array<{
+        id: number
+        name: string
+        tiny_image?: string
+      }>
+    }
+
+    if (!data.items) return []
+
+    return data.items.slice(0, 10).map(item => ({
+      id: item.id,
+      name: item.name,
+      // Use Steam header image (460x215) for better quality
+      imageUrl: `https://steamcdn-a.akamaihd.net/steam/apps/${item.id}/header.jpg`
+    }))
+  } catch (error) {
+    console.warn(`Failed to search Steam Store for "${term}":`, error)
+    return []
+  }
+}
+
