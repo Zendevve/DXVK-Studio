@@ -834,6 +834,7 @@ function GameDetailView({
   onUpdate: (game: Game) => void
 }) {
   const [isInstalling, setIsInstalling] = useState(false)
+  const [installStatus, setInstallStatus] = useState('')
   const [selectedFork, setSelectedFork] = useState<DxvkFork>('official')
   const [selectedVersion, setSelectedVersion] = useState('')
   const [availableEngines, setAvailableEngines] = useState<Array<{
@@ -904,19 +905,29 @@ function GameDetailView({
     if (!isElectron || game.architecture === 'unknown') return
 
     setIsInstalling(true)
+    setInstallStatus('Checking cache...')
+
     try {
       // Check if version is cached, if not download it
       const isCached = await window.electronAPI.isEngineCached(selectedFork, selectedVersion)
 
       if (!isCached) {
+        setInstallStatus('Downloading DXVK...')
         // Get available engines to find download URL
         const engines = await window.electronAPI.getAvailableEngines(selectedFork)
         const engine = engines.find(e => e.version === selectedVersion)
 
         if (engine) {
-          await window.electronAPI.downloadEngine(selectedFork, selectedVersion, engine.downloadUrl)
+          const downloadResult = await window.electronAPI.downloadEngine(selectedFork, selectedVersion, engine.downloadUrl)
+          if (!downloadResult.success) {
+            throw new Error(downloadResult.error || 'Download failed')
+          }
+        } else {
+          throw new Error('Engine not found')
         }
       }
+
+      setInstallStatus('Installing DLLs...')
 
       // Install DXVK
       const result = await window.electronAPI.installDxvk(
@@ -934,9 +945,15 @@ function GameDetailView({
           dxvkVersion: selectedVersion,
           dxvkFork: selectedFork
         })
+        setInstallStatus('✓ Installed successfully!')
+        setTimeout(() => setInstallStatus(''), 3000)
+      } else {
+        throw new Error(result.error || 'Installation failed')
       }
     } catch (error) {
       console.error('Install failed:', error)
+      setInstallStatus(`✗ ${(error as Error).message}`)
+      setTimeout(() => setInstallStatus(''), 5000)
     } finally {
       setIsInstalling(false)
     }
@@ -1103,12 +1120,13 @@ function GameDetailView({
                   disabled={
                     isInstalling ||
                     game.architecture === 'unknown' ||
+                    !selectedVersion ||
                     (antiCheatWarning?.highRisk && !showAntiCheatOverride)
                   }
                   className="btn-primary flex items-center gap-2"
                 >
                   {isInstalling ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                  Install DXVK
+                  {isInstalling ? installStatus || 'Installing...' : 'Install DXVK'}
                 </button>
               )}
 
@@ -1130,6 +1148,16 @@ function GameDetailView({
                 </button>
               )}
             </div>
+
+            {/* Install Status Message */}
+            {installStatus && !isInstalling && (
+              <p className={`text-sm mt-3 font-medium ${installStatus.startsWith('✓') ? 'text-accent-success' :
+                  installStatus.startsWith('✗') ? 'text-accent-danger' :
+                    'text-studio-400'
+                }`}>
+                {installStatus}
+              </p>
+            )}
 
             {game.architecture === 'unknown' && (
               <p className="text-accent-warning text-sm mt-4">
