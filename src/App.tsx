@@ -73,8 +73,8 @@ function App() {
         dxvkStatus: g.dxvkStatus || 'inactive',
         dxvkVersion: g.dxvkVersion,
         dxvkFork: g.dxvkFork,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       } as Game)))
       showNotification('success', `Found ${scannedGames.length} games`)
     } catch (error) {
@@ -112,8 +112,8 @@ function App() {
         architecture: analysis.architecture,
         platform: 'manual',
         dxvkStatus: 'inactive',
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       }
 
       setGames(prev => [...prev, newGame])
@@ -134,10 +134,10 @@ function App() {
       {notification && (
         <div className={`
           fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center gap-3
-          animate-slide-up
-          ${notification.type === 'success' ? 'bg-accent-success/20 border border-accent-success/30 text-accent-success' : ''}
-          ${notification.type === 'error' ? 'bg-accent-danger/20 border border-accent-danger/30 text-accent-danger' : ''}
-          ${notification.type === 'info' ? 'bg-accent-info/20 border border-accent-info/30 text-accent-info' : ''}
+          animate-slide-up backdrop-blur-sm
+          ${notification.type === 'success' ? 'bg-accent-success border border-accent-success/50 text-white' : ''}
+          ${notification.type === 'error' ? 'bg-accent-danger border border-accent-danger/50 text-white' : ''}
+          ${notification.type === 'info' ? 'bg-accent-info border border-accent-info/50 text-white' : ''}
         `}>
           {notification.type === 'success' && <Check className="w-4 h-4" />}
           {notification.type === 'error' && <X className="w-4 h-4" />}

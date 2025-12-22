@@ -13,9 +13,9 @@ export interface Game {
   dxvkStatus: DxvkStatus
   dxvkVersion?: string
   dxvkFork?: DxvkFork
-  lastPlayed?: Date
-  createdAt: Date
-  updatedAt: Date
+  lastPlayed?: Date | string
+  createdAt: Date | string
+  updatedAt: Date | string
 }
 
 export type Architecture = '32' | '64' | 'unknown'
