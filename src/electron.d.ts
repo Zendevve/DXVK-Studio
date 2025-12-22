@@ -36,6 +36,7 @@ declare global {
       // PE Analysis
       analyzeExecutable: (path: string) => Promise<PEAnalysisResult>
       findExecutables: (gamePath: string) => Promise<string[]>
+      getVersionInfo: (path: string) => Promise<{ ProductName?: string; FileDescription?: string; OriginalFilename?: string }>
 
       // Engines
       getAvailableEngines: (fork: DxvkFork) => Promise<DxvkEngine[]>
@@ -64,6 +65,7 @@ declare global {
       }>
 
       // Config
+      readConfig: (gamePath: string) => Promise<DxvkConfig | null>
       saveConfig: (gamePath: string, config: DxvkConfig) => Promise<{ success: boolean; error?: string }>
 
       // Anti-Cheat

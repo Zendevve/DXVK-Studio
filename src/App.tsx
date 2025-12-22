@@ -17,7 +17,11 @@ import {
   Pencil,
   Circle,
   CircleDot,
-  CircleAlert
+  CircleAlert,
+  Info,
+  AlertCircle,
+  Filter,
+  ClipboardCopy
 } from 'lucide-react'
 import type { Game, DxvkFork } from './shared/types'
 
@@ -26,6 +30,43 @@ import { ConfigEditorModal } from './components/ConfigEditorModal'
 
 // Check if running in Electron
 const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
+
+// Log entry type
+interface LogEntry {
+  id: string
+  timestamp: Date
+  level: 'info' | 'warn' | 'error'
+  message: string
+  details?: string
+}
+
+// Global log store (shared across components)
+let globalLogs: LogEntry[] = []
+let logListeners: Array<() => void> = []
+
+function addLogEntry(level: LogEntry['level'], message: string, details?: string) {
+  const entry: LogEntry = {
+    id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    timestamp: new Date(),
+    level,
+    message,
+    details
+  }
+  globalLogs = [entry, ...globalLogs].slice(0, 500) // Keep max 500 entries
+  logListeners.forEach(listener => listener())
+}
+
+function subscribeToLogs(listener: () => void) {
+  logListeners.push(listener)
+  return () => {
+    logListeners = logListeners.filter(l => l !== listener)
+  }
+}
+
+function clearLogs() {
+  globalLogs = []
+  logListeners.forEach(listener => listener())
+}
 
 function App() {
   // Load games from localStorage on init
@@ -112,8 +153,10 @@ function App() {
         return [...manualGames, ...updatedGames]
       })
       showNotification('success', `Found ${scannedGames.length} games`)
+      addLogEntry('info', `Game scan completed`, `Found ${scannedGames.length} games from Steam, GOG, and Epic`)
     } catch (error) {
       showNotification('error', 'Failed to scan Steam library')
+      addLogEntry('error', 'Game scan failed', String(error))
       console.error(error)
     } finally {
       setIsScanning(false)
@@ -197,9 +240,11 @@ function App() {
       } else {
         showNotification('success', `Added ${gameName} (${analysis.architecture}-bit). Click Search to find cover art.`)
       }
+      addLogEntry('info', `Game added manually: ${gameName}`, `Path: ${gamePath}`)
 
     } catch (error) {
       showNotification('error', 'Failed to analyze/add game')
+      addLogEntry('error', 'Failed to add game', String(error))
       console.error(error)
     }
   }, [showNotification])
@@ -405,14 +450,10 @@ function App() {
             )}
           </div>
         ) : activeView === 'settings' ? (
-          <SettingsView />
-        ) : (
-          <div className="p-6 flex flex-col items-center justify-center py-20 text-center">
-            <FileText className="w-16 h-16 text-studio-700 mb-4" />
-            <h3 className="text-lg font-medium text-studio-400 mb-2">Coming Soon</h3>
-            <p className="text-studio-500">This view is under development.</p>
-          </div>
-        )}
+          <SettingsView onClearGames={() => { setGames([]); addLogEntry('info', 'Game library cleared') }} />
+        ) : activeView === 'logs' ? (
+          <LogsView />
+        ) : null}
       </main>
     </div>
   )
@@ -450,38 +491,130 @@ function NavItem({
 
 // Engine Manager View Component
 function EngineManagerView() {
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'cached' | 'available'>('cached')
+  const [selectedFork, setSelectedFork] = useState<DxvkFork>('official')
+
+  // Cached engines state
   const [cachedEngines, setCachedEngines] = useState<Array<{
     fork: DxvkFork
     version: string
     path: string
     sizeBytes: number
   }>>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingCached, setIsLoadingCached] = useState(true)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
 
+  // Available engines state
+  const [availableEngines, setAvailableEngines] = useState<Array<{
+    version: string
+    cached: boolean
+    downloadUrl: string
+    releaseDate?: string
+    changelog?: string
+  }>>([])
+  const [isLoadingAvailable, setIsLoadingAvailable] = useState(false)
+
+  // Download state
+  const [downloadingVersion, setDownloadingVersion] = useState<string | null>(null)
+  const [downloadProgress, setDownloadProgress] = useState(0)
+
+  // Fetch cached engines on mount
+  const fetchCached = useCallback(async () => {
+    if (!isElectron) return
+
+    setIsLoadingCached(true)
+    try {
+      const engines = await window.electronAPI.getAllCachedEngines()
+      setCachedEngines(engines)
+    } catch (error) {
+      console.error('Failed to fetch cached engines:', error)
+    } finally {
+      setIsLoadingCached(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchCached()
+  }, [fetchCached])
+
+  // Fetch available engines when fork changes or tab switches to available
+  const fetchAvailable = useCallback(async () => {
+    if (!isElectron) return
+
+    setIsLoadingAvailable(true)
+    try {
+      const engines = await window.electronAPI.getAvailableEngines(selectedFork)
+      setAvailableEngines(engines.map((e: { version: string; cached: boolean; downloadUrl: string; releaseDate?: string; changelog?: string }) => ({
+        version: e.version,
+        cached: e.cached,
+        downloadUrl: e.downloadUrl,
+        releaseDate: e.releaseDate,
+        changelog: e.changelog
+      })))
+    } catch (error) {
+      console.error('Failed to fetch available engines:', error)
+      setAvailableEngines([])
+    } finally {
+      setIsLoadingAvailable(false)
+    }
+  }, [selectedFork])
+
+  useEffect(() => {
+    if (activeTab === 'available') {
+      fetchAvailable()
+    }
+  }, [activeTab, selectedFork, fetchAvailable])
+
+  // Download progress listener
   useEffect(() => {
     if (!isElectron) return
 
-    const fetchCached = async () => {
-      setIsLoading(true)
-      try {
-        const engines = await window.electronAPI.getAllCachedEngines()
-        setCachedEngines(engines)
-      } catch (error) {
-        console.error('Failed to fetch cached engines:', error)
-      } finally {
-        setIsLoading(false)
+    const handleProgress = (progress: { fork: DxvkFork; version: string; percent: number }) => {
+      if (progress.fork === selectedFork && progress.version === downloadingVersion) {
+        setDownloadProgress(progress.percent)
       }
     }
 
-    fetchCached()
-  }, [])
+    window.electronAPI.onDownloadProgress(handleProgress)
 
+    return () => {
+      window.electronAPI.removeDownloadProgressListener()
+    }
+  }, [selectedFork, downloadingVersion])
+
+  // Handle download
+  const handleDownload = async (version: string, downloadUrl: string) => {
+    if (!isElectron || downloadingVersion) return
+
+    setDownloadingVersion(version)
+    setDownloadProgress(0)
+
+    try {
+      const result = await window.electronAPI.downloadEngine(selectedFork, version, downloadUrl)
+      if (result.success) {
+        // Update available engines to show as cached
+        setAvailableEngines(prev => prev.map(e =>
+          e.version === version ? { ...e, cached: true } : e
+        ))
+        // Refresh cached list
+        await fetchCached()
+        addLogEntry('info', `Engine downloaded: ${selectedFork} v${version}`)
+      }
+    } catch (error) {
+      console.error('Download failed:', error)
+      addLogEntry('error', `Engine download failed: ${selectedFork} v${version}`, String(error))
+    } finally {
+      setDownloadingVersion(null)
+      setDownloadProgress(0)
+    }
+  }
+
+  // Handle delete
   const handleDelete = async (fork: DxvkFork, version: string) => {
     if (!isElectron) return
 
-    // Confirmation dialog
-    const confirmed = window.confirm(`Delete ${fork} ${version}? This will remove the cached engine files.`)
+    const confirmed = window.confirm(`Delete ${fork} v${version}? This will remove the cached engine files.`)
     if (!confirmed) return
 
     const key = `${fork}-${version}`
@@ -491,11 +624,41 @@ function EngineManagerView() {
       const result = await window.electronAPI.deleteEngine(fork, version)
       if (result.success) {
         setCachedEngines(prev => prev.filter(e => !(e.fork === fork && e.version === version)))
+        // Update available engines to show as not cached
+        if (fork === selectedFork) {
+          setAvailableEngines(prev => prev.map(e =>
+            e.version === version ? { ...e, cached: false } : e
+          ))
+        }
       }
     } catch (error) {
       console.error('Failed to delete engine:', error)
     } finally {
       setIsDeleting(null)
+    }
+  }
+
+  // Handle clear all
+  const handleClearAll = async () => {
+    if (!isElectron || cachedEngines.length === 0) return
+
+    const confirmed = window.confirm(`Delete ALL ${cachedEngines.length} cached engines? This cannot be undone.`)
+    if (!confirmed) return
+
+    setIsLoadingCached(true)
+    try {
+      for (const engine of cachedEngines) {
+        await window.electronAPI.deleteEngine(engine.fork, engine.version)
+      }
+      setCachedEngines([])
+      // Refresh available to update cached status
+      if (activeTab === 'available') {
+        await fetchAvailable()
+      }
+    } catch (error) {
+      console.error('Failed to clear cache:', error)
+    } finally {
+      setIsLoadingCached(false)
     }
   }
 
@@ -507,82 +670,320 @@ function EngineManagerView() {
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
   }
 
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return ''
+    try {
+      return new Date(dateStr).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      })
+    } catch {
+      return ''
+    }
+  }
+
   const totalSize = cachedEngines.reduce((acc, e) => acc + e.sizeBytes, 0)
 
   const forkLabels: Record<DxvkFork, string> = {
-    official: 'Official',
-    gplasync: 'GPL Async',
-    nvapi: 'NVAPI'
+    official: 'Official (doitsujin)',
+    gplasync: 'GPL Async (Ph42oN)',
+    nvapi: 'NVAPI (jp7677)'
   }
+
+
+
+  // Group cached engines by fork
+  const groupedCached = cachedEngines.reduce((acc, engine) => {
+    if (!acc[engine.fork]) acc[engine.fork] = []
+    acc[engine.fork].push(engine)
+    return acc
+  }, {} as Record<DxvkFork, typeof cachedEngines>)
 
   return (
     <div className="animate-fade-in p-6">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-studio-100">Engine Manager</h2>
-          <p className="text-studio-400 mt-1">Manage cached DXVK versions</p>
+          <p className="text-studio-400 mt-1">Download and manage DXVK versions</p>
         </div>
-        <div className="glass-card px-4 py-2">
-          <span className="text-sm text-studio-400">Total Cache: </span>
-          <span className="text-sm font-medium text-studio-200">{formatSize(totalSize)}</span>
+        <div className="flex items-center gap-3">
+          <div className="glass-card px-4 py-2">
+            <span className="text-sm text-studio-400">Cache: </span>
+            <span className="text-sm font-medium text-studio-200">{formatSize(totalSize)}</span>
+          </div>
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <RefreshCw className="w-8 h-8 text-accent-vulkan animate-spin" />
-        </div>
-      ) : cachedEngines.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <Download className="w-16 h-16 text-studio-700 mb-4" />
-          <h3 className="text-lg font-medium text-studio-400 mb-2">No cached engines</h3>
-          <p className="text-studio-500 max-w-sm">
-            DXVK versions will be cached here when you install them to games.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {cachedEngines.map((engine) => {
-            const key = `${engine.fork}-${engine.version}`
-            const deleting = isDeleting === key
+      {/* Tabs */}
+      <div className="flex items-center gap-4 mb-6 border-b border-studio-800">
+        <button
+          onClick={() => setActiveTab('cached')}
+          className={`pb-3 px-1 text-sm font-medium transition-colors border-b-2 -mb-px ${activeTab === 'cached'
+            ? 'text-accent-vulkan border-accent-vulkan'
+            : 'text-studio-400 border-transparent hover:text-studio-200'
+            }`}
+        >
+          Cached Engines
+          {cachedEngines.length > 0 && (
+            <span className="ml-2 px-1.5 py-0.5 text-xs rounded-full bg-studio-700 text-studio-300">
+              {cachedEngines.length}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('available')}
+          className={`pb-3 px-1 text-sm font-medium transition-colors border-b-2 -mb-px ${activeTab === 'available'
+            ? 'text-accent-vulkan border-accent-vulkan'
+            : 'text-studio-400 border-transparent hover:text-studio-200'
+            }`}
+        >
+          Available Versions
+        </button>
 
-            return (
-              <div key={key} className="glass-card p-4 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-accent-vulkan/20 flex items-center justify-center">
-                    <Download className="w-5 h-5 text-accent-vulkan" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-studio-200">{forkLabels[engine.fork]}</span>
-                      <span className="text-accent-glow font-mono">v{engine.version}</span>
+        {/* Fork selector (only for Available tab) */}
+        {activeTab === 'available' && (
+          <div className="ml-auto flex items-center gap-2 pb-3">
+            <select
+              value={selectedFork}
+              onChange={(e) => setSelectedFork(e.target.value as DxvkFork)}
+              className="input-field text-sm py-1.5"
+              disabled={isLoadingAvailable}
+            >
+              <option value="official">Official (doitsujin)</option>
+              <option value="gplasync">GPL Async (Ph42oN)</option>
+              <option value="nvapi">NVAPI (jp7677)</option>
+            </select>
+            <button
+              onClick={fetchAvailable}
+              disabled={isLoadingAvailable}
+              className="btn-icon"
+              title="Refresh versions"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoadingAvailable ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+        )}
+
+        {/* Actions for Cached tab */}
+        {activeTab === 'cached' && cachedEngines.length > 0 && (
+          <div className="ml-auto flex items-center gap-2 pb-3">
+            <button
+              onClick={fetchCached}
+              disabled={isLoadingCached}
+              className="btn-icon"
+              title="Refresh cache"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoadingCached ? 'animate-spin' : ''}`} />
+            </button>
+            <button
+              onClick={handleClearAll}
+              disabled={isLoadingCached}
+              className="btn-secondary text-sm flex items-center gap-1.5 text-accent-danger hover:bg-accent-danger/10"
+            >
+              <Trash2 className="w-4 h-4" />
+              Clear All
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Cached Tab Content */}
+      {activeTab === 'cached' && (
+        <>
+          {isLoadingCached ? (
+            <div className="flex items-center justify-center py-20">
+              <RefreshCw className="w-8 h-8 text-accent-vulkan animate-spin" />
+            </div>
+          ) : cachedEngines.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <Download className="w-16 h-16 text-studio-700 mb-4" />
+              <h3 className="text-lg font-medium text-studio-400 mb-2">No cached engines</h3>
+              <p className="text-studio-500 max-w-sm mb-6">
+                Download DXVK versions from the "Available Versions" tab, or they will be cached automatically when you install them to games.
+              </p>
+              <button
+                onClick={() => setActiveTab('available')}
+                className="btn-primary flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Browse Available Versions
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {(['official', 'gplasync', 'nvapi'] as DxvkFork[]).map(fork => {
+                const engines = groupedCached[fork]
+                if (!engines || engines.length === 0) return null
+
+                return (
+                  <div key={fork}>
+                    <h3 className="text-sm font-medium text-studio-400 mb-3 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-accent-vulkan"></span>
+                      {forkLabels[fork]}
+                      <span className="text-studio-500">({engines.length})</span>
+                    </h3>
+                    <div className="space-y-2">
+                      {engines.map((engine) => {
+                        const key = `${engine.fork}-${engine.version}`
+                        const deleting = isDeleting === key
+
+                        return (
+                          <div key={key} className="glass-card p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-lg bg-accent-vulkan/20 flex items-center justify-center">
+                                <Check className="w-5 h-5 text-accent-success" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-accent-glow font-mono font-medium">v{engine.version}</span>
+                                </div>
+                                <p className="text-sm text-studio-500">{formatSize(engine.sizeBytes)}</p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleDelete(engine.fork, engine.version)}
+                              disabled={deleting}
+                              className="btn-secondary flex items-center gap-2 text-accent-danger hover:bg-accent-danger/10"
+                            >
+                              {deleting ? (
+                                <RefreshCw className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
+                              Delete
+                            </button>
+                          </div>
+                        )
+                      })}
                     </div>
-                    <p className="text-sm text-studio-500">{formatSize(engine.sizeBytes)}</p>
                   </div>
-                </div>
-                <button
-                  onClick={() => handleDelete(engine.fork, engine.version)}
-                  disabled={deleting}
-                  className="btn-secondary flex items-center gap-2 text-accent-danger hover:bg-accent-danger/10"
-                >
-                  {deleting ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <X className="w-4 h-4" />
-                  )}
-                  Delete
-                </button>
-              </div>
-            )
-          })}
-        </div>
+                )
+              })}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Available Tab Content */}
+      {activeTab === 'available' && (
+        <>
+          {isLoadingAvailable ? (
+            <div className="flex items-center justify-center py-20">
+              <RefreshCw className="w-8 h-8 text-accent-vulkan animate-spin" />
+            </div>
+          ) : availableEngines.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <AlertTriangle className="w-16 h-16 text-accent-warning mb-4" />
+              <h3 className="text-lg font-medium text-studio-400 mb-2">No versions available</h3>
+              <p className="text-studio-500 max-w-sm">
+                Could not fetch releases. This may be due to API rate limiting. Try again later.
+              </p>
+              <button
+                onClick={fetchAvailable}
+                className="btn-secondary mt-4 flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Retry
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {availableEngines.map((engine, index) => {
+                const isDownloading = downloadingVersion === engine.version
+                const isCached = engine.cached
+
+                return (
+                  <div key={engine.version} className="glass-card p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isCached ? 'bg-accent-success/20' : 'bg-studio-700'
+                          }`}>
+                          {isCached ? (
+                            <Check className="w-5 h-5 text-accent-success" />
+                          ) : (
+                            <Download className="w-5 h-5 text-studio-400" />
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-accent-glow font-mono font-medium">v{engine.version}</span>
+                            {index === 0 && (
+                              <span className="px-1.5 py-0.5 text-xs rounded bg-accent-vulkan/20 text-accent-vulkan">
+                                Latest
+                              </span>
+                            )}
+                            {isCached && (
+                              <span className="px-1.5 py-0.5 text-xs rounded bg-accent-success/20 text-accent-success">
+                                Cached
+                              </span>
+                            )}
+                          </div>
+                          {engine.releaseDate && (
+                            <p className="text-sm text-studio-500">{formatDate(engine.releaseDate)}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {isCached ? (
+                        <button
+                          onClick={() => handleDelete(selectedFork, engine.version)}
+                          disabled={isDeleting === `${selectedFork}-${engine.version}`}
+                          className="btn-secondary flex items-center gap-2 text-accent-danger hover:bg-accent-danger/10"
+                        >
+                          {isDeleting === `${selectedFork}-${engine.version}` ? (
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                          Delete
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleDownload(engine.version, engine.downloadUrl)}
+                          disabled={isDownloading || !!downloadingVersion}
+                          className="btn-primary flex items-center gap-2"
+                        >
+                          {isDownloading ? (
+                            <>
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                              {downloadProgress > 0 ? `${downloadProgress}%` : 'Starting...'}
+                            </>
+                          ) : (
+                            <>
+                              <Download className="w-4 h-4" />
+                              Download
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Download Progress Bar */}
+                    {isDownloading && downloadProgress > 0 && (
+                      <div className="mt-3">
+                        <div className="h-1.5 bg-studio-700 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-accent-vulkan transition-all duration-300"
+                            style={{ width: `${downloadProgress}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </>
       )}
     </div>
   )
 }
 
 // Settings View Component
-function SettingsView() {
+function SettingsView({ onClearGames }: { onClearGames: () => void }) {
   const [defaultFork, setDefaultFork] = useState<DxvkFork>('official')
   const [cacheSize, setCacheSize] = useState<string>('Calculating...')
 
@@ -668,6 +1069,56 @@ function SettingsView() {
           </div>
         </div>
 
+        {/* Data Management Section */}
+        <div className="glass-card p-6">
+          <h3 className="text-lg font-semibold text-studio-200 mb-4 flex items-center gap-2">
+            <Trash2 className="w-5 h-5 text-accent-vulkan" />
+            Data Management
+          </h3>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-studio-300">Clear Game Library</p>
+                <p className="text-xs text-studio-500">Remove all games from the library (keeps cache)</p>
+              </div>
+              <button
+                onClick={() => {
+                  if (window.confirm('Remove all games from the library? This cannot be undone.')) {
+                    onClearGames()
+                  }
+                }}
+                className="btn-secondary text-sm text-accent-danger hover:bg-accent-danger/10"
+              >
+                Clear Library
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-studio-300">Open Cache Folder</p>
+                <p className="text-xs text-studio-500">View cached DXVK versions on disk</p>
+              </div>
+              <button
+                onClick={async () => {
+                  if (isElectron) {
+                    const engines = await window.electronAPI.getAllCachedEngines()
+                    if (engines.length > 0) {
+                      // Open parent folder of first cached engine
+                      const path = engines[0].path
+                      const parentPath = path.split('\\').slice(0, -1).join('\\')
+                      window.electronAPI.openPath(parentPath)
+                    }
+                  }
+                }}
+                className="btn-secondary text-sm"
+              >
+                Open Folder
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Support Section */}
         <div className="glass-card p-6 bg-gradient-to-br from-accent-vulkan/10 to-transparent border-accent-vulkan/20">
           <h3 className="text-lg font-semibold text-studio-100 mb-4 flex items-center gap-2">
@@ -741,166 +1192,160 @@ function SettingsView() {
   )
 }
 
-// Config Editor Modal Component
-function ConfigEditorModal({
-  isOpen,
-  gamePath,
-  onClose,
-  onSave
-}: {
-  isOpen: boolean
-  gamePath: string
-  onClose: () => void
-  onSave: () => void
-}) {
-  const [config, setConfig] = useState({
-    enableAsync: true,
-    numCompilerThreads: 0,
-    maxFrameLatency: 1,
-    enableHDR: false,
-    logLevel: 'warn' as 'none' | 'error' | 'warn' | 'info' | 'debug'
-  })
-  const [isSaving, setIsSaving] = useState(false)
+// Logs View Component
+function LogsView() {
+  const [logs, setLogs] = useState<LogEntry[]>(globalLogs)
+  const [filterLevel, setFilterLevel] = useState<'all' | 'info' | 'warn' | 'error'>('all')
 
-  const handleSave = async () => {
-    if (!isElectron) return
+  // Subscribe to log updates
+  useEffect(() => {
+    const unsubscribe = subscribeToLogs(() => {
+      setLogs([...globalLogs])
+    })
+    return unsubscribe
+  }, [])
 
-    setIsSaving(true)
-    try {
-      await window.electronAPI.saveConfig(gamePath, config)
-      onSave()
-      onClose()
-    } catch (error) {
-      console.error('Failed to save config:', error)
-    } finally {
-      setIsSaving(false)
+  const filteredLogs = filterLevel === 'all'
+    ? logs
+    : logs.filter(log => log.level === filterLevel)
+
+  const handleClear = () => {
+    if (window.confirm('Clear all logs?')) {
+      clearLogs()
     }
   }
 
-  if (!isOpen) return null
+  const handleExport = () => {
+    const logText = logs.map(log =>
+      `[${log.timestamp.toISOString()}] [${log.level.toUpperCase()}] ${log.message}${log.details ? `\n  ${log.details}` : ''}`
+    ).join('\n')
+
+    const blob = new Blob([logText], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `dxvk-studio-logs-${new Date().toISOString().slice(0, 10)}.txt`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    })
+  }
+
+  const getLevelIcon = (level: LogEntry['level']) => {
+    switch (level) {
+      case 'info': return <Info className="w-4 h-4 text-blue-400" />
+      case 'warn': return <AlertTriangle className="w-4 h-4 text-accent-warning" />
+      case 'error': return <AlertCircle className="w-4 h-4 text-accent-danger" />
+    }
+  }
+
+  const getLevelClass = (level: LogEntry['level']) => {
+    switch (level) {
+      case 'info': return 'text-blue-400'
+      case 'warn': return 'text-accent-warning'
+      case 'error': return 'text-accent-danger'
+    }
+  }
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 animate-fade-in">
-      <div className="glass-card max-w-lg w-full mx-4 p-6 max-h-[80vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-semibold text-studio-100">Configure DXVK</h3>
+    <div className="animate-fade-in p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-studio-100">Logs</h2>
+          <p className="text-studio-400 mt-1">Application activity history</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Filter */}
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-studio-400" />
+            <select
+              value={filterLevel}
+              onChange={(e) => setFilterLevel(e.target.value as typeof filterLevel)}
+              className="input-field text-sm py-1.5"
+            >
+              <option value="all">All Levels</option>
+              <option value="info">Info Only</option>
+              <option value="warn">Warnings Only</option>
+              <option value="error">Errors Only</option>
+            </select>
+          </div>
+
+          {/* Actions */}
           <button
-            onClick={onClose}
-            className="btn-icon"
-            aria-label="Close dialog"
+            onClick={handleExport}
+            disabled={logs.length === 0}
+            className="btn-secondary text-sm flex items-center gap-1.5"
+            title="Export logs to file"
           >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="space-y-6">
-          {/* Performance Section */}
-          <div>
-            <h4 className="text-sm font-medium text-accent-vulkan mb-3 uppercase tracking-wider">Performance</h4>
-            <div className="space-y-4">
-              <label className="flex items-center justify-between">
-                <div>
-                  <p className="text-studio-200">Async Shader Compilation</p>
-                  <p className="text-xs text-studio-500">Compile shaders in background (may cause stuttering)</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={config.enableAsync}
-                  onChange={(e) => setConfig({ ...config, enableAsync: e.target.checked })}
-                  className="w-5 h-5 rounded border-studio-600 bg-studio-800 text-accent-vulkan focus:ring-accent-vulkan"
-                />
-              </label>
-
-              <div>
-                <label className="block text-studio-200 mb-1">Compiler Threads</label>
-                <p className="text-xs text-studio-500 mb-2">0 = auto (recommended)</p>
-                <input
-                  type="number"
-                  min="0"
-                  max="16"
-                  value={config.numCompilerThreads}
-                  onChange={(e) => setConfig({ ...config, numCompilerThreads: parseInt(e.target.value) || 0 })}
-                  className="input-field w-24"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Frame Pacing Section */}
-          <div>
-            <h4 className="text-sm font-medium text-accent-vulkan mb-3 uppercase tracking-wider">Frame Pacing</h4>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-studio-200 mb-1">Max Frame Latency</label>
-                <p className="text-xs text-studio-500 mb-2">Lower = less input lag, higher = smoother frames</p>
-                <select
-                  value={config.maxFrameLatency}
-                  onChange={(e) => setConfig({ ...config, maxFrameLatency: parseInt(e.target.value) })}
-                  className="input-field w-32"
-                >
-                  <option value={1}>1 (Low latency)</option>
-                  <option value={2}>2</option>
-                  <option value={3}>3 (Smooth)</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Display Section */}
-          <div>
-            <h4 className="text-sm font-medium text-accent-vulkan mb-3 uppercase tracking-wider">Display</h4>
-            <div className="space-y-4">
-              <label className="flex items-center justify-between">
-                <div>
-                  <p className="text-studio-200">Enable HDR</p>
-                  <p className="text-xs text-studio-500">Requires HDR-capable display</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={config.enableHDR}
-                  onChange={(e) => setConfig({ ...config, enableHDR: e.target.checked })}
-                  className="w-5 h-5 rounded border-studio-600 bg-studio-800 text-accent-vulkan focus:ring-accent-vulkan"
-                />
-              </label>
-            </div>
-          </div>
-
-          {/* Debug Section */}
-          <div>
-            <h4 className="text-sm font-medium text-accent-vulkan mb-3 uppercase tracking-wider">Debug</h4>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-studio-200 mb-1">Log Level</label>
-                <select
-                  value={config.logLevel}
-                  onChange={(e) => setConfig({ ...config, logLevel: e.target.value as typeof config.logLevel })}
-                  className="input-field w-40"
-                >
-                  <option value="none">None</option>
-                  <option value="error">Error</option>
-                  <option value="warn">Warning</option>
-                  <option value="info">Info</option>
-                  <option value="debug">Debug</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-studio-700">
-          <button onClick={onClose} className="btn-secondary">
-            Cancel
+            <ClipboardCopy className="w-4 h-4" />
+            Export
           </button>
           <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="btn-primary flex items-center gap-2"
+            onClick={handleClear}
+            disabled={logs.length === 0}
+            className="btn-secondary text-sm flex items-center gap-1.5 text-accent-danger hover:bg-accent-danger/10"
           >
-            {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-            Save Config
+            <Trash2 className="w-4 h-4" />
+            Clear
           </button>
         </div>
       </div>
+
+      {/* Log Entries */}
+      {filteredLogs.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <FileText className="w-16 h-16 text-studio-700 mb-4" />
+          <h3 className="text-lg font-medium text-studio-400 mb-2">
+            {logs.length === 0 ? 'No logs yet' : 'No logs match filter'}
+          </h3>
+          <p className="text-studio-500 max-w-sm">
+            {logs.length === 0
+              ? 'Activity logs will appear here as you use the app.'
+              : 'Try changing the filter to see more logs.'}
+          </p>
+        </div>
+      ) : (
+        <div className="glass-card overflow-hidden">
+          <div className="max-h-[calc(100vh-280px)] overflow-y-auto">
+            {filteredLogs.map((log) => (
+              <div
+                key={log.id}
+                className="flex items-start gap-3 p-3 border-b border-studio-700/50 last:border-b-0 hover:bg-studio-800/50"
+              >
+                <div className="mt-0.5">{getLevelIcon(log.level)}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-sm font-medium ${getLevelClass(log.level)}`}>
+                      {log.level.toUpperCase()}
+                    </span>
+                    <span className="text-xs text-studio-500">
+                      {formatTime(log.timestamp)}
+                    </span>
+                  </div>
+                  <p className="text-sm text-studio-200 mt-0.5">{log.message}</p>
+                  {log.details && (
+                    <p className="text-xs text-studio-500 mt-1 font-mono">{log.details}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      {logs.length > 0 && (
+        <div className="mt-4 text-center text-sm text-studio-500">
+          Showing {filteredLogs.length} of {logs.length} log entries
+        </div>
+      )}
     </div>
   )
 }
@@ -1014,8 +1459,12 @@ function GameDetailView({
     version: string
     cached: boolean
     downloadUrl: string
+    releaseDate?: string
+    changelog?: string
   }>>([])
   const [isLoadingEngines, setIsLoadingEngines] = useState(false)
+  const [downloadProgress, setDownloadProgress] = useState(0)
+  const [isPredownloading, setIsPredownloading] = useState(false)
 
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false)
@@ -1078,10 +1527,12 @@ function GameDetailView({
       setIsLoadingEngines(true)
       try {
         const engines = await window.electronAPI.getAvailableEngines(selectedFork)
-        setAvailableEngines(engines.map((e: { version: string; cached: boolean; downloadUrl: string }) => ({
+        setAvailableEngines(engines.map((e: { version: string; cached: boolean; downloadUrl: string; releaseDate?: string; changelog?: string }) => ({
           version: e.version,
           cached: e.cached,
-          downloadUrl: e.downloadUrl
+          downloadUrl: e.downloadUrl,
+          releaseDate: e.releaseDate,
+          changelog: e.changelog
         })))
         // Always select first version when fork changes (reset stale selection)
         if (engines.length > 0) {
@@ -1148,12 +1599,14 @@ function GameDetailView({
           dxvkFork: selectedFork
         })
         setInstallStatus('✓ Installed successfully!')
+        addLogEntry('info', `DXVK ${selectedFork} v${selectedVersion} installed`, `Game: ${game.name}`)
         setTimeout(() => setInstallStatus(''), 3000)
       } else {
         throw new Error(result.error || 'Installation failed')
       }
     } catch (error) {
       console.error('Install failed:', error)
+      addLogEntry('error', `DXVK installation failed for ${game.name}`, String(error))
       setInstallStatus(`✗ ${(error as Error).message}`)
       setTimeout(() => setInstallStatus(''), 5000)
     } finally {
@@ -1175,9 +1628,11 @@ function GameDetailView({
           dxvkVersion: undefined,
           dxvkFork: undefined
         })
+        addLogEntry('info', `DXVK uninstalled from ${game.name}`)
       }
     } catch (error) {
       console.error('Uninstall failed:', error)
+      addLogEntry('error', `DXVK uninstall failed for ${game.name}`, String(error))
     } finally {
       setIsInstalling(false)
     }
@@ -1323,6 +1778,134 @@ function GameDetailView({
                 </select>
               </div>
             </div>
+
+            {/* Version Info & Cache Controls */}
+            {selectedVersion && availableEngines.length > 0 && (() => {
+              const currentEngine = availableEngines.find(e => e.version === selectedVersion)
+              if (!currentEngine) return null
+
+              return (
+                <div className="mb-6 p-4 rounded-lg bg-studio-800/50 border border-studio-700">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-accent-glow font-mono font-medium">v{selectedVersion}</span>
+                      {currentEngine.releaseDate && (
+                        <span className="text-xs text-studio-500">
+                          {new Date(currentEngine.releaseDate).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </span>
+                      )}
+                      {currentEngine.cached ? (
+                        <span className="px-1.5 py-0.5 text-xs rounded bg-accent-success/20 text-accent-success">Cached</span>
+                      ) : (
+                        <span className="px-1.5 py-0.5 text-xs rounded bg-studio-700 text-studio-400">Not Downloaded</span>
+                      )}
+                    </div>
+
+                    {/* Cache Actions */}
+                    <div className="flex items-center gap-2">
+                      {!currentEngine.cached && !isPredownloading && (
+                        <button
+                          onClick={async () => {
+                            if (!isElectron) return
+                            setIsPredownloading(true)
+                            setDownloadProgress(0)
+
+                            // Subscribe to progress
+                            const handleProgress = (progress: { fork: DxvkFork; version: string; percent: number }) => {
+                              if (progress.fork === selectedFork && progress.version === selectedVersion) {
+                                setDownloadProgress(progress.percent)
+                              }
+                            }
+                            window.electronAPI.onDownloadProgress(handleProgress)
+
+                            try {
+                              const result = await window.electronAPI.downloadEngine(selectedFork, selectedVersion, currentEngine.downloadUrl)
+                              if (result.success) {
+                                setAvailableEngines(prev => prev.map(e =>
+                                  e.version === selectedVersion ? { ...e, cached: true } : e
+                                ))
+                                addLogEntry('info', `Pre-downloaded ${selectedFork} v${selectedVersion}`)
+                              }
+                            } catch (error) {
+                              addLogEntry('error', `Pre-download failed: ${selectedFork} v${selectedVersion}`, String(error))
+                            } finally {
+                              setIsPredownloading(false)
+                              setDownloadProgress(0)
+                              window.electronAPI.removeDownloadProgressListener()
+                            }
+                          }}
+                          className="btn-secondary text-xs flex items-center gap-1.5"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          Pre-download
+                        </button>
+                      )}
+
+                      {isPredownloading && (
+                        <div className="flex items-center gap-2">
+                          <RefreshCw className="w-4 h-4 animate-spin text-accent-vulkan" />
+                          <span className="text-xs text-studio-400">{downloadProgress > 0 ? `${downloadProgress}%` : 'Starting...'}</span>
+                        </div>
+                      )}
+
+                      {currentEngine.cached && game.dxvkStatus !== 'active' && (
+                        <button
+                          onClick={async () => {
+                            if (!isElectron) return
+                            const confirmed = window.confirm(`Delete cached ${selectedFork} v${selectedVersion}?`)
+                            if (!confirmed) return
+
+                            try {
+                              const result = await window.electronAPI.deleteEngine(selectedFork, selectedVersion)
+                              if (result.success) {
+                                setAvailableEngines(prev => prev.map(e =>
+                                  e.version === selectedVersion ? { ...e, cached: false } : e
+                                ))
+                                addLogEntry('info', `Cleared cache: ${selectedFork} v${selectedVersion}`)
+                              }
+                            } catch (error) {
+                              console.error('Failed to delete engine:', error)
+                            }
+                          }}
+                          className="btn-secondary text-xs flex items-center gap-1.5 text-accent-danger hover:bg-accent-danger/10"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Clear Cache
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Download Progress Bar */}
+                  {isPredownloading && downloadProgress > 0 && (
+                    <div className="mb-3">
+                      <div className="h-1.5 bg-studio-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-accent-vulkan transition-all duration-300"
+                          style={{ width: `${downloadProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Changelog Preview */}
+                  {currentEngine.changelog && (
+                    <div className="mt-3 pt-3 border-t border-studio-700">
+                      <p className="text-xs text-studio-400 mb-1">Release Notes:</p>
+                      <p className="text-xs text-studio-300 whitespace-pre-wrap line-clamp-3">
+                        {currentEngine.changelog.length > 300
+                          ? currentEngine.changelog.slice(0, 300) + '...'
+                          : currentEngine.changelog}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
 
             {/* Anti-Cheat Warning Banner */}
             {antiCheatWarning?.hasAntiCheat && game.dxvkStatus !== 'active' && (

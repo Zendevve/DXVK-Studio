@@ -50,10 +50,10 @@ Democratize DXVK usage by transforming it from a command-line-driven utility int
 | Uninstallation with restore | ✅ Complete | P0 |
 | `dxvk.conf` generation | ✅ Complete | P1 |
 | Basic game grid UI | ✅ Complete | P0 |
-| Anti-cheat detection | 🔶 Defined | P1 |
-| Dynamic version dropdown | ⬜ Pending | P1 |
-| Engine Manager UI | ⬜ Pending | P1 |
-| Settings/Logs views | ⬜ Pending | P2 |
+| Anti-cheat detection | ✅ Complete | P1 |
+| Dynamic version dropdown | ✅ Complete | P1 |
+| Engine Manager UI | ✅ Complete | P1 |
+| Settings/Logs views | ✅ Complete | P2 |
 
 ### Post-MVP Features
 

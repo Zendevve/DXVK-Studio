@@ -14,7 +14,7 @@ interface ContextMenuProps {
 export function ContextMenu({
   x,
   y,
-  game,
+  game: _game,
   onClose,
   onOpenFolder,
   onViewDetails,

@@ -10,6 +10,25 @@ The Engine Manager is responsible for discovering, downloading, caching, and man
 | **GPL Async** | GitLab (Ph42oN/dxvk-gplasync) | Async shader compilation (legacy/performance) |
 | **NVAPI** | GitHub (jp7677/dxvk-nvapi) | NVIDIA-specific features |
 
+## UI Features
+
+The Engine Manager view provides a dedicated interface for managing DXVK versions:
+
+### Tabs
+- **Cached Engines**: Shows all locally downloaded versions, grouped by fork
+- **Available Versions**: Browse and download versions from GitHub/GitLab
+
+### Features
+| Feature | Description |
+|---------|-------------|
+| Fork Selector | Filter available versions by Official, GPL Async, or NVAPI |
+| Pre-Download | Download DXVK versions before installing to games |
+| Download Progress | Real-time progress bar during downloads |
+| Clear All Cache | One-click removal of all cached engines |
+| Refresh | Reload cached/available engine lists |
+| Grouped Display | Cached engines organized by fork |
+| Version Badges | "Latest" and "Cached" indicators |
+
 ## Architecture
 
 ### Data Flow
@@ -21,7 +40,7 @@ The Engine Manager is responsible for discovering, downloading, caching, and man
 
 ### Key Components
 - **Service**: `electron/services/engine-manager.ts`
-- **Frontend**: `VersionSelector.tsx` (implied in App.tsx)
+- **UI**: `EngineManagerView` component in `src/App.tsx`
 
 ## Technical Details
 
@@ -47,3 +66,4 @@ To prevent "Engine not found" errors during GitHub API rate limiting:
 └── nvapi/
     ├── 0.7.1/
 ```
+
