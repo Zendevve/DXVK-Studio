@@ -260,7 +260,8 @@ function findGameExecutables(gamePath) {
 }
 const GITHUB_REPOS = {
   official: "doitsujin/dxvk",
-  gplasync: "Ph42oN/dxvk-gplasync",
+  gplasync: "Sporif/dxvk-async",
+  // Archived but still accessible
   nvapi: "jp7677/dxvk-nvapi"
 };
 function getEnginesPath() {

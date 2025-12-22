@@ -14,7 +14,7 @@ import type { DxvkEngine, DxvkFork, DxvkRelease } from '../shared/types'
 // GitHub API endpoints for DXVK releases
 const GITHUB_REPOS: Record<DxvkFork, string> = {
   official: 'doitsujin/dxvk',
-  gplasync: 'Ph42oN/dxvk-gplasync',
+  gplasync: 'Sporif/dxvk-async',  // Archived but still accessible
   nvapi: 'jp7677/dxvk-nvapi'
 }
 
