@@ -346,9 +346,10 @@ async function fetchReleases(fork, limit = 10) {
 }
 function releaseToEngine(release, fork) {
   const asset = release.assets.find(
-    (a) => a.name.endsWith(".tar.gz") || a.name.endsWith(".tar.xz")
+    (a) => a.name.endsWith(".zip") || a.name.endsWith(".tar.gz") || a.name.endsWith(".tar.xz")
   );
   if (!asset) {
+    console.warn(`No downloadable asset found for release ${release.tag_name}`);
     return null;
   }
   const version = release.tag_name.replace(/^v/, "");

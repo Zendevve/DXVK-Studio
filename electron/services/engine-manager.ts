@@ -160,12 +160,13 @@ export async function fetchReleases(fork: DxvkFork, limit = 10): Promise<DxvkRel
  * Convert GitHub release to DxvkEngine
  */
 export function releaseToEngine(release: DxvkRelease, fork: DxvkFork): DxvkEngine | null {
-  // Find the tarball asset
+  // Find the download asset - DXVK uses ZIP files
   const asset = release.assets.find(a =>
-    a.name.endsWith('.tar.gz') || a.name.endsWith('.tar.xz')
+    a.name.endsWith('.zip') || a.name.endsWith('.tar.gz') || a.name.endsWith('.tar.xz')
   )
 
   if (!asset) {
+    console.warn(`No downloadable asset found for release ${release.tag_name}`)
     return null
   }
 
