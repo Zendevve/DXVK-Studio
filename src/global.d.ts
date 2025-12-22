@@ -30,7 +30,6 @@ declare global {
       openPath: (path: string) => Promise<string>
 
       // Game Discovery
-      scanSteamLibrary: () => Promise<Partial<Game>[]> // Deprecated
       scanAllGames: () => Promise<Partial<Game>[]>
       checkSteamInstalled: () => Promise<boolean>
       searchMetadata: (term: string) => Promise<number | null>
@@ -71,7 +70,6 @@ declare global {
         integrity?: string
       }>
 
-      // Config
       // Config
       readConfig: (gamePath: string) => Promise<DxvkConfig | null>
       saveConfig: (gamePath: string, config: DxvkConfig) => Promise<{ success: boolean; error?: string }>
