@@ -45,6 +45,7 @@ export function findEpicGames(): Game[] {
                 executable: exePath,
                 platform: 'epic',
                 dxvkStatus: 'inactive',
+                vkd3dStatus: 'inactive',
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
                 architecture: 'unknown' // Will be analyzed

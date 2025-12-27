@@ -1442,25 +1442,29 @@ function GameCard({
   )
 }
 
-// Engine Management Card Component
+// Unified Engine Management Card Component
 function EngineManagementCard({
   game,
-  type,
   onUpdate,
   isElectron,
   installDisabled = false
 }: {
   game: Game
-  type: 'dxvk' | 'vkd3d'
   onUpdate: (game: Game) => void
   isElectron: boolean
   installDisabled?: boolean
 }) {
   const [isInstalling, setIsInstalling] = useState(false)
   const [installStatus, setInstallStatus] = useState('')
-  const [selectedFork, setSelectedFork] = useState<DxvkFork>(
-    type === 'vkd3d' ? 'vkd3d' : (game.dxvkFork && game.dxvkFork !== 'vkd3d' ? game.dxvkFork : 'official')
-  )
+
+  // Determine initial fork from existing game state
+  const getInitialFork = (): DxvkFork => {
+    if (game.dxvkFork && game.dxvkFork !== 'vkd3d') return game.dxvkFork
+    if (game.vkd3dFork) return 'vkd3d'
+    return 'official'
+  }
+
+  const [selectedFork, setSelectedFork] = useState<DxvkFork>(getInitialFork())
   const [selectedVersion, setSelectedVersion] = useState('')
   const [availableEngines, setAvailableEngines] = useState<Array<{
     version: string
@@ -1474,9 +1478,16 @@ function EngineManagementCard({
   const [downloadProgress, setDownloadProgress] = useState(0)
   const [isPredownloading, setIsPredownloading] = useState(false)
 
-  // Status and version from game object based on type
-  const isActive = type === 'dxvk' ? game.dxvkStatus === 'active' : game.vkd3dStatus === 'active'
+  // Is this a VKD3D fork?
+  const isVkd3d = selectedFork === 'vkd3d'
 
+  // Check if currently active
+  const isActive = isVkd3d
+    ? game.vkd3dStatus === 'active'
+    : game.dxvkStatus === 'active'
+
+  // VKD3D doesn't support 32-bit
+  const is32BitVkd3dBlocked = isVkd3d && game.architecture === '32'
 
   // Fetch available engines
   useEffect(() => {
@@ -1506,13 +1517,15 @@ function EngineManagementCard({
 
   const handleInstall = async () => {
     if (!isElectron || game.architecture === 'unknown') return
+    if (is32BitVkd3dBlocked) return
+
     setIsInstalling(true)
     setInstallStatus('Checking cache...')
 
     try {
       const isCached = await window.electronAPI.isEngineCached(selectedFork, selectedVersion)
       if (!isCached) {
-        setInstallStatus(`Downloading ${type.toUpperCase()}...`)
+        setInstallStatus(`Downloading ${isVkd3d ? 'VKD3D' : 'DXVK'}...`)
         const engine = availableEngines.find(e => e.version === selectedVersion)
         if (engine) {
           const downloadResult = await window.electronAPI.downloadEngine(selectedFork, selectedVersion, engine.downloadUrl)
@@ -1532,30 +1545,28 @@ function EngineManagementCard({
       )
 
       if (result.success) {
-        // Construct updated game object from manifest if possible?
-        // For now, manually update local state to reflect success
         const updates: Partial<Game> = {}
-        if (type === 'dxvk') {
-          updates.dxvkStatus = 'active'
-          updates.dxvkVersion = selectedVersion
-          updates.dxvkFork = selectedFork
-        } else {
+        if (isVkd3d) {
           updates.vkd3dStatus = 'active'
           updates.vkd3dVersion = selectedVersion
           updates.vkd3dFork = selectedFork
+        } else {
+          updates.dxvkStatus = 'active'
+          updates.dxvkVersion = selectedVersion
+          updates.dxvkFork = selectedFork
         }
 
         onUpdate({ ...game, ...updates })
         setInstallStatus('✓ Installed successfully!')
         setTimeout(() => setInstallStatus(''), 3000)
-        addLogEntry('info', `${type.toUpperCase()} ${selectedFork} v${selectedVersion} installed`, `Game: ${game.name}`)
+        addLogEntry('info', `${isVkd3d ? 'VKD3D' : 'DXVK'} ${selectedFork} v${selectedVersion} installed`, `Game: ${game.name}`)
       } else {
         throw new Error(result.error || 'Installation failed')
       }
     } catch (error) {
       console.error('Install failed:', error)
       setInstallStatus(`✗ ${(error as Error).message}`)
-      addLogEntry('error', `${type.toUpperCase()} install failed`, String(error))
+      addLogEntry('error', `${isVkd3d ? 'VKD3D' : 'DXVK'} install failed`, String(error))
       setTimeout(() => setInstallStatus(''), 5000)
     } finally {
       setIsInstalling(false)
@@ -1566,35 +1577,22 @@ function EngineManagementCard({
     if (!isElectron) return
     setIsInstalling(true)
     try {
-      // Use the newly supported 'component' parameter if available or fallback
-      // Assuming frontend wrapper sends args correctly to backend uninstallEngine(path, component)
-      // Note: Backend ipc 'dxvk:uninstall' currently takes only gamePath.
-      // I need to update IPC handler 'dxvk:uninstall' (which calls backend uninstallEngine) to support component?
-      // Actually backend ipc 'dxvk:uninstall' calls `uninstallEngine(gamePath)`.
-      // I need to update frontend electronAPI to support component first?
-      // OR I can't support component specific uninstall from frontend yet without IPC update.
-      // Wait, I updated IPC 'dxvk:uninstall' to call `uninstallEngine(gamePath)` without args?
-      // No, `uninstallEngine` takes optional component.
-      // I need to update IPC `dxvk:uninstall` to accept component.
-
-      // Let's assume IPC update is incoming or I'll do it.
-      // For now, send gamePath.
-
-      const result = await window.electronAPI.uninstallDxvk(game.path, type) // Pass type to IPC
+      const component = isVkd3d ? 'vkd3d' : 'dxvk'
+      const result = await window.electronAPI.uninstallDxvk(game.path, component)
 
       if (result.success) {
         const updates: Partial<Game> = {}
-        if (type === 'dxvk') {
-          updates.dxvkStatus = 'inactive'
-          updates.dxvkVersion = undefined
-          updates.dxvkFork = undefined
-        } else {
+        if (isVkd3d) {
           updates.vkd3dStatus = 'inactive'
           updates.vkd3dVersion = undefined
           updates.vkd3dFork = undefined
+        } else {
+          updates.dxvkStatus = 'inactive'
+          updates.dxvkVersion = undefined
+          updates.dxvkFork = undefined
         }
         onUpdate({ ...game, ...updates })
-        addLogEntry('info', `${type.toUpperCase()} uninstalled`, `Game: ${game.name}`)
+        addLogEntry('info', `${isVkd3d ? 'VKD3D' : 'DXVK'} uninstalled`, `Game: ${game.name}`)
       }
     } catch (error) {
       console.error(error)
@@ -1639,40 +1637,57 @@ function EngineManagementCard({
     setAvailableEngines(prev => prev.map(e => e.version === selectedVersion ? { ...e, cached: false } : e))
   }
 
+  // Fork display names
+  const getForkLabel = (fork: DxvkFork) => {
+    switch (fork) {
+      case 'official': return 'DXVK Official'
+      case 'gplasync': return 'DXVK GPL Async'
+      case 'nvapi': return 'DXVK NVAPI'
+      case 'vkd3d': return 'VKD3D-Proton (D3D12)'
+    }
+  }
+
   return (
     <div className="glass-card p-6">
-      <h3 className="text-lg font-semibold text-studio-200 mb-4">{type === 'dxvk' ? 'DXVK' : 'VKD3D'} Management</h3>
+      <h3 className="text-lg font-semibold text-studio-200 mb-4">Engine Management</h3>
 
-      {type === 'vkd3d' && (
-        <div className="mb-6 p-4 rounded-lg bg-studio-800/50 border border-studio-700 flex items-start gap-3">
-          <Info className="w-5 h-5 text-studio-400 mt-0.5 shrink-0" />
-          <div className="text-sm text-studio-400">
-            <p className="font-medium text-studio-300 mb-1">Note regarding VKD3D on Windows</p>
-            VKD3D translates Direct3D 12 to Vulkan. On Windows 10/11, native D3D12 is usually faster.
-            This is primarily useful for developers or legacy operating systems.
+      {/* VKD3D Info Banner */}
+      {isVkd3d && (
+        <div className="mb-4 p-3 rounded-lg bg-studio-800/50 border border-studio-700 flex items-start gap-3">
+          <Info className="w-4 h-4 text-studio-400 mt-0.5 shrink-0" />
+          <div className="text-xs text-studio-400">
+            <p className="font-medium text-studio-300">VKD3D-Proton translates D3D12 → Vulkan</p>
+            <p className="mt-1">64-bit only. On Windows 10/11, native D3D12 is typically faster.</p>
           </div>
+        </div>
+      )}
+
+      {/* 32-bit VKD3D Warning */}
+      {is32BitVkd3dBlocked && (
+        <div className="mb-4 p-3 rounded-lg bg-accent-warning/10 border border-accent-warning/30 flex items-start gap-3">
+          <AlertTriangle className="w-4 h-4 text-accent-warning mt-0.5 shrink-0" />
+          <p className="text-xs text-accent-warning">VKD3D-Proton does not support 32-bit games. Select a DXVK fork instead.</p>
         </div>
       )}
 
       {/* Fork/Version Selection */}
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div>
-          <label className="block text-sm text-studio-400 mb-2">Fork</label>
+          <label className="block text-sm text-studio-400 mb-2">Engine</label>
           <select
             value={selectedFork}
             onChange={(e) => setSelectedFork(e.target.value as DxvkFork)}
             className="input-field"
-            disabled={isActive || type === 'vkd3d'} // VKD3D only has one fork currently
+            disabled={isActive}
           >
-            {type === 'dxvk' ? (
-              <>
-                <option value="official">Official (doitsujin)</option>
-                <option value="gplasync">GPL Async (Ph42oN)</option>
-                <option value="nvapi">NVAPI (jp7677)</option>
-              </>
-            ) : (
-              <option value="vkd3d">Proton (HansKristian)</option>
-            )}
+            <optgroup label="DXVK (D3D9/10/11 → Vulkan)">
+              <option value="official">{getForkLabel('official')}</option>
+              <option value="gplasync">{getForkLabel('gplasync')}</option>
+              <option value="nvapi">{getForkLabel('nvapi')}</option>
+            </optgroup>
+            <optgroup label="VKD3D (D3D12 → Vulkan)">
+              <option value="vkd3d" disabled={game.architecture === '32'}>{getForkLabel('vkd3d')}{game.architecture === '32' ? ' (64-bit only)' : ''}</option>
+            </optgroup>
           </select>
         </div>
         <div>
@@ -1694,7 +1709,7 @@ function EngineManagementCard({
         </div>
       </div>
 
-      {/* Cache/Predownload Controls (Simplified) */}
+      {/* Cache/Predownload Controls */}
       {selectedVersion && availableEngines.find(e => e.version === selectedVersion) && (
         <div className="mb-6 p-4 rounded-lg bg-studio-800/50 border border-studio-700">
           <div className="flex items-center justify-between">
@@ -1733,7 +1748,7 @@ function EngineManagementCard({
         ) : (
           <button
             onClick={handleInstall}
-            disabled={isInstalling || installDisabled || game.architecture === 'unknown' || !selectedVersion}
+            disabled={isInstalling || installDisabled || game.architecture === 'unknown' || !selectedVersion || is32BitVkd3dBlocked}
             className="btn-primary flex items-center gap-2"
           >
             {isInstalling ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
@@ -1923,11 +1938,8 @@ function GameDetailView({
             )}
           </div>
 
-          {/* Engines */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <EngineManagementCard game={game} type="dxvk" onUpdate={onUpdate} isElectron={isElectron} installDisabled={installDisabled} />
-            <EngineManagementCard game={game} type="vkd3d" onUpdate={onUpdate} isElectron={isElectron} installDisabled={installDisabled} />
-          </div>
+          {/* Engine Management */}
+          <EngineManagementCard game={game} onUpdate={onUpdate} isElectron={isElectron} installDisabled={installDisabled} />
         </div>
 
         {/* Right Column Status */}

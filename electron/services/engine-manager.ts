@@ -3,14 +3,11 @@
  * Handles downloading, caching, and managing DXVK versions
  */
 
-import { existsSync, mkdirSync, createWriteStream, readdirSync, rmSync, createReadStream } from 'fs'
+import { existsSync, mkdirSync, createWriteStream, readdirSync, rmSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { app } from 'electron'
-import { pipeline } from 'stream/promises'
-import { createGunzip } from 'zlib'
-import { extract, x as tarExtract } from 'tar'
-import { Readable } from 'stream'
-import { Decompress } from 'fzstd'
+import { extract } from 'tar'
+import { decompress as zstdDecompress } from 'fzstd'
 import type { DxvkEngine, DxvkFork, DxvkRelease } from '../shared/types'
 
 // GitHub API endpoints for DXVK releases
@@ -341,7 +338,9 @@ export async function downloadEngine(
   onProgress?: (percent: number) => void
 ): Promise<string> {
   const versionPath = getVersionPath(fork, version)
-  const tempPath = join(getEnginesPath(), `temp-${fork}-${version}.tar.gz`)
+  // Determine file extension from URL
+  const ext = downloadUrl.endsWith('.tar.zst') ? '.tar.zst' : downloadUrl.endsWith('.tar.xz') ? '.tar.xz' : '.tar.gz'
+  const tempPath = join(getEnginesPath(), `temp-${fork}-${version}${ext}`)
 
   // Create directory
   mkdirSync(versionPath, { recursive: true })
@@ -387,14 +386,17 @@ export async function downloadEngine(
 
     // Extract the tarball
     if (downloadUrl.endsWith('.tar.zst')) {
-      await pipeline(
-        createReadStream(tempPath),
-        new Decompress() as any,
-        tarExtract({
-          cwd: versionPath,
-          strip: 1
-        })
-      )
+      // For .tar.zst files, decompress with fzstd then extract
+      const zstData = readFileSync(tempPath)
+      const tarData = zstdDecompress(zstData)
+      const tarPath = tempPath.replace('.tar.zst', '.tar')
+      writeFileSync(tarPath, tarData)
+      await extract({
+        file: tarPath,
+        cwd: versionPath,
+        strip: 1
+      })
+      rmSync(tarPath, { force: true })
     } else {
       await extract({
         file: tempPath,

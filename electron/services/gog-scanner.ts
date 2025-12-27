@@ -70,6 +70,7 @@ export async function findGogGames(): Promise<Game[]> {
               executable: exePath,
               platform: 'gog',
               dxvkStatus: 'inactive',
+              vkd3dStatus: 'inactive',
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
               architecture: 'unknown'
