@@ -73,6 +73,97 @@ export function isDxvkInstalled(gamePath: string): boolean {
 }
 
 /**
+ * Status of manually installed DXVK/VKD3D DLLs (without manifest)
+ */
+export interface ManualInstallationStatus {
+  detected: boolean
+  dxvk: {
+    found: boolean
+    dlls: string[]
+  }
+  vkd3d: {
+    found: boolean
+    dlls: string[]
+  }
+}
+
+/**
+ * All known DXVK DLL filenames (case-insensitive comparison)
+ */
+const ALL_DXVK_DLLS = [
+  'd3d9.dll',
+  'd3d10.dll',
+  'd3d10_1.dll',
+  'd3d10core.dll',
+  'd3d11.dll',
+  'dxgi.dll'
+]
+
+/**
+ * All known VKD3D DLL filenames (case-insensitive comparison)
+ */
+const ALL_VKD3D_DLLS = [
+  'd3d12.dll',
+  'd3d12core.dll'
+]
+
+/**
+ * Detect manually installed DXVK/VKD3D DLLs (not installed through DXVK Studio)
+ *
+ * This checks for the presence of known DXVK/VKD3D DLL files in a game directory
+ * when there is no manifest file present. This helps identify:
+ * - Manually copied DXVK/VKD3D files
+ * - Installations from other tools
+ * - Pre-existing modifications that could cause conflicts
+ */
+export function detectManualInstallation(gamePath: string): ManualInstallationStatus {
+  const manifest = readManifest(gamePath)
+
+  // If manifest exists, these aren't "manual" installations
+  if (manifest) {
+    return {
+      detected: false,
+      dxvk: { found: false, dlls: [] },
+      vkd3d: { found: false, dlls: [] }
+    }
+  }
+
+  const foundDxvkDlls: string[] = []
+  const foundVkd3dDlls: string[] = []
+
+  // Check for DXVK DLLs
+  for (const dllName of ALL_DXVK_DLLS) {
+    const dllPath = join(gamePath, dllName)
+    if (existsSync(dllPath)) {
+      foundDxvkDlls.push(dllName)
+    }
+  }
+
+  // Check for VKD3D DLLs
+  for (const dllName of ALL_VKD3D_DLLS) {
+    const dllPath = join(gamePath, dllName)
+    if (existsSync(dllPath)) {
+      foundVkd3dDlls.push(dllName)
+    }
+  }
+
+  const dxvkFound = foundDxvkDlls.length > 0
+  const vkd3dFound = foundVkd3dDlls.length > 0
+
+  return {
+    detected: dxvkFound || vkd3dFound,
+    dxvk: {
+      found: dxvkFound,
+      dlls: foundDxvkDlls
+    },
+    vkd3d: {
+      found: vkd3dFound,
+      dlls: foundVkd3dDlls
+    }
+  }
+}
+
+/**
  * Get the installed DXVK version for a game
  */
 export function getInstalledVersion(gamePath: string): { version: string; fork: DxvkFork } | null {

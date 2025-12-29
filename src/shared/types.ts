@@ -25,7 +25,7 @@ export interface Game {
 
 export type Architecture = '32' | '64' | 'unknown'
 export type Platform = 'steam' | 'manual' | 'gog' | 'epic'
-export type DxvkStatus = 'active' | 'inactive' | 'outdated' | 'corrupt'
+export type DxvkStatus = 'active' | 'inactive' | 'outdated' | 'corrupt' | 'manual'
 export type DxvkFork = 'official' | 'gplasync' | 'nvapi' | 'vkd3d'
 
 // ============================================

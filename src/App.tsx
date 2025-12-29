@@ -291,7 +291,7 @@ function App() {
         {/* Logo */}
         <div className="p-4 border-b border-studio-800">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-vulkan to-accent-glow flex items-center justify-center shadow-glow">
+            <div className="w-10 h-10 rounded-lg bg-accent-vulkan flex items-center justify-center shadow-elevation-2">
               <Gamepad2 className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -477,10 +477,10 @@ function NavItem({
       onClick={onClick}
       className={`
         w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
-        transition-all duration-150
+        transition-colors duration-150 border
         ${active
-          ? 'bg-accent-vulkan/20 text-accent-glow border border-accent-vulkan/30'
-          : 'text-studio-400 hover:bg-studio-800 hover:text-studio-200'
+          ? 'bg-accent-vulkan/15 text-studio-100 border-accent-vulkan/40'
+          : 'text-studio-400 border-transparent hover:bg-studio-800 hover:text-studio-200'
         }
       `}
     >
@@ -840,7 +840,7 @@ function EngineManagerView() {
                               </div>
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-accent-glow font-mono font-medium">v{engine.version}</span>
+                                  <span className="text-accent-vulkan font-mono font-medium">v{engine.version}</span>
                                 </div>
                                 <p className="text-sm text-studio-500">{formatSize(engine.sizeBytes)}</p>
                               </div>
@@ -911,7 +911,7 @@ function EngineManagerView() {
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="text-accent-glow font-mono font-medium">v{engine.version}</span>
+                            <span className="text-accent-vulkan font-mono font-medium">v{engine.version}</span>
                             {index === 0 && (
                               <span className="px-1.5 py-0.5 text-xs rounded bg-accent-vulkan/20 text-accent-vulkan">
                                 Latest
@@ -1714,7 +1714,7 @@ function EngineManagementCard({
         <div className="mb-6 p-4 rounded-lg bg-studio-800/50 border border-studio-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-accent-glow font-mono">v{selectedVersion}</span>
+              <span className="text-accent-vulkan font-mono">v{selectedVersion}</span>
               {availableEngines.find(e => e.version === selectedVersion)?.cached ?
                 <span className="text-xs bg-accent-success/20 text-accent-success px-1.5 py-0.5 rounded">Cached</span> :
                 <span className="text-xs bg-studio-700 text-studio-400 px-1.5 py-0.5 rounded">Not Cached</span>

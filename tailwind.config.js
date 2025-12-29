@@ -23,7 +23,8 @@ module.exports = {
         },
         accent: {
           vulkan: '#ac2a29',   // DXVK red (Vulkan brand color)
-          glow: '#ff4136',     // Lighter glow
+          hover: '#c73634',    // Lighter hover state
+          pressed: '#8a2221',  // Darker pressed state
           success: '#10b981',  // Green for success states
           warning: '#f59e0b',  // Amber for warnings
           danger: '#ef4444',   // Red for errors
@@ -35,9 +36,13 @@ module.exports = {
         mono: ['JetBrains Mono', 'Consolas', 'monospace'],
       },
       boxShadow: {
-        'glow': '0 0 20px rgba(172, 42, 41, 0.3)',
-        'glow-lg': '0 0 40px rgba(172, 42, 41, 0.4)',
-        'inner-glow': 'inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+        // Professional elevation system - no glows
+        'elevation-1': '0 1px 2px 0 rgb(0 0 0 / 0.15)',
+        'elevation-2': '0 1px 3px 0 rgb(0 0 0 / 0.2), 0 1px 2px -1px rgb(0 0 0 / 0.2)',
+        'elevation-3': '0 4px 6px -1px rgb(0 0 0 / 0.2), 0 2px 4px -2px rgb(0 0 0 / 0.2)',
+        'elevation-4': '0 10px 15px -3px rgb(0 0 0 / 0.25), 0 4px 6px -4px rgb(0 0 0 / 0.2)',
+        // Subtle inner highlight for depth
+        'inner-highlight': 'inset 0 1px 0 rgb(255 255 255 / 0.03)',
       },
       backdropBlur: {
         'xs': '2px',

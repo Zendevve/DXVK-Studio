@@ -24,7 +24,8 @@ import {
   checkIntegrity,
   writeConfig,
   readConfig,
-  readManifest
+  readManifest,
+  detectManualInstallation
 } from './services/deployer'
 import { detectAntiCheat, getAntiCheatSummary } from './services/anti-cheat'
 import { getAllProfiles, saveProfile, deleteProfile } from './services/profile-manager'
@@ -316,6 +317,17 @@ function analyze(gamePath: string, mainExe: string) {
       const integrity = checkIntegrity(gamePath)
       vkd3dStatus = integrity === 'ok' ? 'active' : 'inactive'
     }
+  } else {
+    // No manifest - check for manually installed DLLs
+    const manualStatus = detectManualInstallation(gamePath)
+
+    if (manualStatus.dxvk.found) {
+      dxvkStatus = 'manual'
+    }
+
+    if (manualStatus.vkd3d.found) {
+      vkd3dStatus = 'manual'
+    }
   }
 
   return {
@@ -465,6 +477,13 @@ ipcMain.handle('dxvk:checkStatus', async (_, gamePath: string) => {
     fork: version?.fork,
     integrity
   }
+})
+
+ipcMain.handle('dxvk:detectManual', async (_, gamePath: string) => {
+  if (!isValidGamePath(gamePath)) {
+    return { detected: false, dxvk: { found: false, dlls: [] }, vkd3d: { found: false, dlls: [] } }
+  }
+  return detectManualInstallation(gamePath)
 })
 
 // ============================================

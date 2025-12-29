@@ -104,6 +104,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
       integrity?: string
     }>,
 
+  detectManualInstallation: (gamePath: string) =>
+    ipcRenderer.invoke('dxvk:detectManual', gamePath) as Promise<{
+      detected: boolean
+      dxvk: { found: boolean; dlls: string[] }
+      vkd3d: { found: boolean; dlls: string[] }
+    }>,
+
   // ============================================
   // Configuration
   // ============================================
@@ -191,6 +198,11 @@ declare global {
         version?: string
         fork?: DxvkFork
         integrity?: string
+      }>
+      detectManualInstallation: (gamePath: string) => Promise<{
+        detected: boolean
+        dxvk: { found: boolean; dlls: string[] }
+        vkd3d: { found: boolean; dlls: string[] }
       }>
 
       // Config
