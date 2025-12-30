@@ -86,6 +86,7 @@ describe('Deployer', () => {
     })
 
     it('should return true for game with manifest', () => {
+      mkdirSync(GAME_DIR, { recursive: true })
       writeFileSync(
         join(GAME_DIR, 'dxvk_studio_manifest.json'),
         JSON.stringify({ gameId: 'test', engineVersion: '1.0', engineFork: 'official', architecture: '64', installedAt: '', dlls: [] })
@@ -102,6 +103,7 @@ describe('Deployer', () => {
     })
 
     it('should return version and fork for installed game', () => {
+      mkdirSync(GAME_DIR, { recursive: true })
       writeFileSync(
         join(GAME_DIR, 'dxvk_studio_manifest.json'),
         JSON.stringify({

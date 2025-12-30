@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/icon.png" alt="DXVK Studio" width="100">
+<img src="ExlvaIBD.jpg" alt="DXVK Studio" width="120">
 
 # DXVK Studio
 
@@ -54,6 +54,8 @@ Download, run the installer, done. Supports ongoing development.
 **System Requirements:**
 - Windows 10/11 (64-bit)
 - Vulkan-capable GPU (NVIDIA, AMD, or Intel Arc)
+
+> **⚠️ Note:** The installer is not code-signed (code signing certificates cost $200-400/year). Windows SmartScreen may show a warning on first run—click **"More info" → "Run anyway"** to proceed. This is safe and expected for indie software.
 
 ---
 

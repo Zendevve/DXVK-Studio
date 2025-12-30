@@ -82,6 +82,8 @@ describe('Engine Manager', () => {
   describe('getCachedVersions', () => {
     it('should return list of cached versions', () => {
       const versions = getCachedVersions('official')
+      // getCachedVersions returns all version directories, including empty ones
+      // Use isVersionCached to check if a version actually has DLLs
       expect(versions).toContain('2.7.1')
       expect(versions).toContain('2.6.1')
     })

@@ -24,6 +24,8 @@ describe('Anti-Cheat Detection', () => {
 
   describe('detectAntiCheat', () => {
     it('should detect Easy Anti-Cheat files', () => {
+      // Ensure directory exists before creating file
+      mkdirSync(TEST_DIR, { recursive: true })
       // Create EAC marker file directly in game dir (matching signature pattern)
       writeFileSync(join(TEST_DIR, 'EasyAntiCheat.exe'), 'dummy')
 
