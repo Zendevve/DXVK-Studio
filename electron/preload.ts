@@ -173,7 +173,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   igdbIsConfigured: () => ipcRenderer.invoke('igdb:isConfigured') as Promise<boolean>,
   igdbSearch: (query: string) => ipcRenderer.invoke('igdb:search', query) as Promise<Array<{ id: number; name: string; coverUrl?: string }>>,
   igdbGetDetails: (igdbId: number) => ipcRenderer.invoke('igdb:getDetails', igdbId) as Promise<any>, // Typed in global
-  igdbMatchBySteamId: (steamAppId: string) => ipcRenderer.invoke('igdb:matchBySteamId', steamAppId) as Promise<any>
+  igdbMatchBySteamId: (steamAppId: string) => ipcRenderer.invoke('igdb:matchBySteamId', steamAppId) as Promise<any>,
+
+  // ============================================
+  // Common
+  // ============================================
+  openExternal: (url: string) => ipcRenderer.invoke('common:openExternal', url) as Promise<void>
 })
 
 // TypeScript declarations for the exposed API
@@ -183,6 +188,7 @@ declare global {
       // Dialogs
       openFileDialog: () => Promise<string | null>
       openFolderDialog: () => Promise<string | null>
+      openExternal: (url: string) => Promise<void>
 
       // File System
       pathExists: (path: string) => Promise<boolean>

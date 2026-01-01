@@ -35,6 +35,7 @@ declare global {
       // Dialogs
       openFileDialog: () => Promise<string | null>
       openFolderDialog: () => Promise<string | null>
+      openExternal: (url: string) => Promise<void>
 
       // File System
       pathExists: (path: string) => Promise<boolean>
@@ -117,6 +118,7 @@ declare global {
       igdbIsConfigured: () => Promise<boolean>
       igdbSearch: (term: string) => Promise<any[]>
       igdbGetDetails: (igdbId: number) => Promise<any>
+      igdbMatchBySteamId: (steamAppId: string) => Promise<any>
     }
   }
 }

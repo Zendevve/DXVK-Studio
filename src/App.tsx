@@ -2004,14 +2004,26 @@ function EngineManagementCard({
             Uninstall
           </button>
         ) : (
-          <button
-            onClick={handleInstall}
-            disabled={isInstalling || installDisabled || game.architecture === 'unknown' || !selectedVersion || is32BitVkd3dBlocked}
-            className="btn-primary flex items-center gap-2"
-          >
-            {isInstalling ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            Install
-          </button>
+          <>
+            {game.steamAppId && (
+              <button
+                onClick={() => window.electronAPI.openExternal(`https://www.protondb.com/app/${game.steamAppId}`)}
+                className="btn-secondary flex items-center gap-2"
+                title="Check compatibility on ProtonDB, the best source for DXVK reports"
+              >
+                <ExternalLink className="w-4 h-4" />
+                ProtonDB
+              </button>
+            )}
+            <button
+              onClick={handleInstall}
+              disabled={isInstalling || installDisabled || game.architecture === 'unknown' || !selectedVersion || is32BitVkd3dBlocked}
+              className="btn-primary flex items-center gap-2"
+            >
+              {isInstalling ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              Install
+            </button>
+          </>
         )}
       </div>
 

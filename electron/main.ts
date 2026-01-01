@@ -660,3 +660,7 @@ ipcMain.handle('igdb:matchBySteamId', async (_, steamAppId: string) => {
   return getGameBySteamId(steamAppId)
 })
 
+ipcMain.handle('common:openExternal', async (_, url: string) => {
+  await shell.openExternal(url)
+})
+
