@@ -375,17 +375,17 @@ function App() {
           {/* Quick Stats */}
           <div className="p-4 border-t border-white/5">
             <div className="glass-card p-4 space-y-3 bg-studio-900/40">
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-caption-1">
                 <span className="text-studio-500">Games</span>
                 <span className="text-studio-200 font-medium">{games.length}</span>
               </div>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-caption-1">
                 <span className="text-studio-500">DXVK Active</span>
                 <span className="text-accent-success font-medium">
                   {games.filter(g => g.dxvkStatus === 'active').length}
                 </span>
               </div>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-caption-1">
                 <span className="text-studio-500">Steam</span>
                 <span className={steamInstalled === null ? 'text-studio-500' : steamInstalled ? 'text-accent-success' : 'text-accent-warning'}>
                   {steamInstalled === null ? '...' : steamInstalled ? 'Found' : 'Not Found'}
@@ -408,7 +408,7 @@ function App() {
                     placeholder="Search games..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="input-field pl-10"
+                    className="input-field pl-10 text-body"
                   />
                 </div>
               </div>
@@ -416,7 +416,7 @@ function App() {
                 <button
                   onClick={handleScan}
                   disabled={isScanning}
-                  className="btn-secondary flex items-center gap-2"
+                  className="btn-secondary flex items-center gap-2 text-callout"
                   title="Scan all libraries (Steam, GOG, Epic)"
                 >
                   <RefreshCw className={`w-4 h-4 ${isScanning ? 'animate-spin' : ''}`} />
@@ -424,7 +424,7 @@ function App() {
                 </button>
                 <button
                   onClick={handleAddGame}
-                  className="btn-primary flex items-center gap-2"
+                  className="btn-primary flex items-center gap-2 text-callout"
                 >
                   <Plus className="w-4 h-4" />
                   Add Game
@@ -464,8 +464,8 @@ function App() {
                   {filteredGames.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-20 text-center">
                       <Gamepad2 className="w-16 h-16 text-studio-700 mb-4" />
-                      <h3 className="text-lg font-medium text-studio-400 mb-2">No games found</h3>
-                      <p className="text-studio-500 max-w-sm">
+                      <h3 className="text-title-2 font-medium text-studio-400 mb-2">No games found</h3>
+                      <p className="text-body text-studio-500 max-w-sm">
                         Click "Scan Games" to detect installed games or "Add Game" to manually add a game.
                       </p>
                     </div>
@@ -540,7 +540,7 @@ function NavItem({
     <button
       onClick={onClick}
       className={`
-        w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
+        w-full flex items-center gap-3 px-4 py-3 rounded-xl text-callout font-medium
         transition-all duration-300 group relative overflow-hidden
         ${active
           ? 'bg-gradient-to-r from-accent-vulkan/20 to-transparent text-white shadow-inner-highlight border border-white/5'
@@ -776,13 +776,13 @@ function EngineManagerView() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-studio-100">Engine Manager</h2>
-          <p className="text-studio-400 mt-1">Download and manage DXVK versions</p>
+          <h2 className="text-title-1 font-bold text-white">Engine Manager</h2>
+          <p className="text-body text-studio-400 mt-1">Download and manage DXVK versions</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="glass-card px-4 py-2">
-            <span className="text-sm text-studio-400">Cache: </span>
-            <span className="text-sm font-medium text-studio-200">{formatSize(totalSize)}</span>
+          <div className="liquid-glass px-4 py-2 flex items-center gap-2">
+            <span className="text-caption-1 text-studio-400">Cache: </span>
+            <span className="text-callout font-medium text-studio-200">{formatSize(totalSize)}</span>
           </div>
         </div>
       </div>

@@ -53,75 +53,88 @@ Users leverage existing platform knowledge.
 
 ### Color Palette
 
-```
-/* Semantic Colors */
---color-primary:     #3B82F6;  /* Blue - primary actions */
---color-success:     #22C55E;  /* Green - confirmations */
---color-warning:     #F59E0B;  /* Amber - cautions */
---color-destructive: #EF4444;  /* Red - deletions, errors */
+We utilize Apple's dynamic system colors which adapt to Light and Dark modes.
 
-/* Neutral Scale */
---color-bg-primary:   #0A0A0A;  /* Main background */
---color-bg-secondary: #141414;  /* Cards, panels */
---color-bg-tertiary:  #1F1F1F;  /* Elevated surfaces */
---color-border:       #2A2A2A;  /* Subtle borders */
---color-text-primary: #FAFAFA;  /* Primary text */
---color-text-secondary: #A1A1AA; /* Secondary text */
---color-text-muted:   #71717A;  /* Disabled, hints */
-```
+#### Base Colors
+
+| Color | Light Mode (Default) | Dark Mode (Default) | Use Case |
+|-------|----------------------|---------------------|----------|
+| **Red** | `#FF383C` (255, 56, 60) | `#FF4245` (255, 66, 69) | Destructive, Error |
+| **Orange** | `#FF8D28` (255, 141, 40) | `#FF9230` (255, 146, 48) | Warning |
+| **Yellow** | `#FFCC00` (255, 204, 0) | `#FFD600` (255, 214, 0) | Attention |
+| **Green** | `#34C759` (52, 199, 89) | `#30D158` (48, 209, 88) | Success |
+| **Mint** | `#00C8B3` (0, 200, 179) | `#00DAC3` (0, 218, 195) | Secondary Success/Info |
+| **Teal** | `#00C3D0` (0, 195, 208) | `#00D2E0` (0, 210, 224) | Info |
+| **Cyan** | `#00C0E8` (0, 192, 232) | `#3CD3FE` (60, 211, 254) | Info |
+| **Blue** | `#0088FF` (0, 136, 255) | `#0091FF` (0, 145, 255) | Primary Action |
+| **Indigo** | `#6155F5` (97, 85, 245) | `#6D7CFF` (109, 124, 255) | Accent |
+| **Purple** | `#CB30E0` (203, 48, 224) | `#DB34F2` (219, 52, 242) | Accent |
+| **Pink** | `#FF2D55` (255, 45, 85) | `#FF375F` (255, 55, 95) | Accent |
+| **Brown** | `#AC7F5E` (172, 127, 94) | `#B78A66` (183, 138, 102) | Neutral Accent |
+
+#### Gray Scale (System Gray)
+
+| Name | Light Mode | Dark Mode |
+|------|------------|-----------|
+| **Gray (1)** | `#8E8E93` (142, 142, 147) | `#8E8E93` (142, 142, 147) |
+| **Gray 2** | `#AEAEB2` (174, 174, 178) | `#636366` (99, 99, 102) |
+| **Gray 3** | `#C7C7CC` (199, 199, 204) | `#48484A` (72, 72, 74) |
+| **Gray 4** | `#D1D1D6` (209, 209, 214) | `#3A3A3C` (58, 58, 60) |
+| **Gray 5** | `#E5E5EA` (229, 229, 234) | `#2C2C2E` (44, 44, 46) |
+| **Gray 6** | `#F2F2F7` (242, 242, 247) | `#1C1C1E` (28, 28, 30) |
 
 ### Typography
 
-| Style | Size | Weight | Line Height | Use Case |
-|-------|------|--------|-------------|----------|
-| **Large Title** | 28px | 700 | 1.2 | Page headers |
-| **Title 1** | 22px | 600 | 1.3 | Section headers |
-| **Title 2** | 18px | 600 | 1.3 | Card titles |
-| **Headline** | 16px | 600 | 1.4 | Emphasized text |
-| **Body** | 14px | 400 | 1.5 | Default text |
-| **Caption** | 12px | 400 | 1.4 | Secondary info |
-| **Footnote** | 11px | 400 | 1.3 | Metadata, timestamps |
+| Style | Size | Weight | Line Height |
+|-------|------|--------|-------------|
+| **Large Title** | 28px+ | 700 | 1.2 |
+| **Title 1** | 22px | 600 | 1.3 |
+| **Title 2** | 18px | 600 | 1.3 |
+| **Headline** | 16px | 600 | 1.4 |
+| **Body** | 14px | 400 | 1.5 |
+| **Caption** | 12px | 400 | 1.4 |
 
-**Rules:**
-- Support Dynamic Type via relative units (`rem`)
-- Never hardcode font sizes in px for user-facing text
-- Maintain 4.5:1 contrast ratio minimum
+**Accessibility Rules:**
+- **Bold Text**: Always use for importance, not just aesthetics.
+- **Dynamic Type**: All text must be resizeable.
+
+### Materials & Liquid Glass
+
+**Liquid Glass** is our primary material for surfaces. It has no inherent color by default, taking on colors from content behind it, but can be tinted for emphasis.
+
+- **Default Material**: Neutral, translucent, allows background to show through.
+- **Tinted Material**: Used for active states or primary actions (e.g., a "Done" button with Blue tint).
+- **Adaptivity**: Symbols and text on Liquid Glass adapt to the underlying content (Dark text on light background, Light text on dark).
+
+**Implementation:**
+```css
+.liquid-glass {
+  background: rgba(255, 255, 255, 0.05); /* Base opacity */
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+```
 
 ### Spacing (8pt Grid)
 
-```
---space-1:  4px;   /* Tight spacing */
---space-2:  8px;   /* Default gap */
---space-3:  12px;  /* Component padding */
---space-4:  16px;  /* Section spacing */
---space-5:  24px;  /* Large gaps */
---space-6:  32px;  /* Page margins */
---space-8:  48px;  /* Major sections */
+```css
+--space-1:  4px;
+--space-2:  8px;
+--space-3:  12px;
+--space-4:  16px;
+--space-5:  24px;
+--space-6:  32px;
+--space-8:  48px;
 ```
 
 ### Border Radius
 
-```
---radius-sm:   4px;   /* Small elements (badges) */
---radius-md:   8px;   /* Default (buttons, inputs) */
---radius-lg:   12px;  /* Cards, panels */
---radius-xl:   16px;  /* Modals, large cards */
---radius-full: 9999px; /* Pills, avatars */
-```
-
-### Shadows & Elevation
-
-```
-/* Elevation levels */
---shadow-sm:  0 1px 2px rgba(0,0,0,0.3);
---shadow-md:  0 4px 6px rgba(0,0,0,0.3);
---shadow-lg:  0 10px 15px rgba(0,0,0,0.4);
---shadow-xl:  0 20px 25px rgba(0,0,0,0.5);
-
-/* Glass effect */
---glass-bg:   rgba(255,255,255,0.05);
---glass-blur: blur(20px);
---glass-border: 1px solid rgba(255,255,255,0.1);
+```css
+--radius-sm:   4px;
+--radius-md:   8px;
+--radius-lg:   12px;
+--radius-xl:   16px;
+--radius-full: 9999px;
 ```
 
 ---
@@ -175,64 +188,70 @@ Every interactive element needs these states:
 
 ## Component Specifications
 
-### Buttons
+## Component Specifications
+
+### Buttons & Controls
 
 | Type | Use Case | Visual |
 |------|----------|--------|
-| **Primary** | Main action per context | Solid fill, primary color |
-| **Secondary** | Alternative actions | Border only, transparent fill |
-| **Ghost** | Tertiary/inline actions | No border, transparent fill |
-| **Destructive** | Delete, remove, cancel | Red color, requires confirmation |
+| **Primary** | Main action | Liquid Glass (Tinted) or Solid Brand Color |
+| **Secondary** | Alternative actions | Liquid Glass (Default) or Bordered |
+| **Ghost** | Tertiary actions | Transparent background |
+| **Destructive** | Remove/Delete | Red Tint (Liquid Glass) or Solid Red |
 
-**Requirements:**
-- Label must be a verb or verb phrase
-- Minimum width: 80px for standalone buttons
-- Icon + label preferred over icon-only
+**Touch & Click Targets:**
+- **Standard:** 44x44px minimum for all pointer interactions.
+- **Compact:** 28x28px absolute minimum (use sparingly).
+- **Padding:** 12pt internal padding for bezel buttons, 24pt clearance for borderless.
 
-### Navigation
+### Icons
 
-| Pattern | When to Use |
-|---------|-------------|
-| **Sidebar (hierarchical)** | Deep app structure, 3+ levels |
-| **Tab bar** | 3–5 top-level sections |
-| **Back button** | Drill-down flows, modal dismissal |
-| **Breadcrumbs** | Deep hierarchies where context matters |
+We use patterns derived from SF Symbols.
+
+| Category | Common Actions |
+|----------|----------------|
+| **Editing** | `pencil`, `trash`, `plus`, `xmark` |
+| **Navigation** | `chevron.left`, `house`, `gear` |
+| **Media** | `play.fill`, `pause.fill` |
+| **Search** | `magnifyingglass` |
+
+**Rules:**
+- **Vector First:** Always use SVG.
+- **Optical Alignment:** Center icons based on visual weight, not just distinct geometry.
+- **Stroke Weight:** Match the stroke width of icons to adjacent Typography (e.g., Medium weight icon with Medium text).
+
+### Dark Mode Layering
+
+Dark mode is not just inverted colors; it uses **Elevation** to denote hierarchy.
+
+- **Base Background:** The darkest layer (`#000000` or very dark gray). Used for the main app window.
+- **Elevated Background:** Slightly lighter gray. Used for Modals, Popovers, and floating panels.
+- **Highlight:** Used for selection states.
 
 ### Modals & Overlays
 
-- Use for actions requiring **focused attention** or **confirmation**
-- Always provide a clear dismiss action (X button, Cancel, or click-outside)
-- Limit to **one primary action** per modal
-- Prefer slide-over panels for contextual editing
-
-### Lists & Tables
-
-- Consistent row height (min 44px)
-- Clear visual separation (borders or alternating backgrounds)
-- Sortable columns indicated with icons
-- Empty states must have helpful messaging
+- Use **Elevated** background colors.
+- Always provide a clear dismiss action.
 
 ---
 
 ## Accessibility Checklist
 
-### Required (WCAG AA)
+### Required (WCAG AA + HIG)
 
-- [ ] All text has 4.5:1 contrast ratio (3:1 for large text)
-- [ ] Focus indicators are visible on all interactive elements
-- [ ] All functionality available via keyboard
-- [ ] Color is not the only indicator of state (add icons/text)
-- [ ] All images have alt text
-- [ ] Form inputs have associated labels
-- [ ] Error messages are descriptive and actionable
+- [ ] **Contrast**:
+    - Normal Text: 4.5:1 minimum.
+    - Large Text (18pt+) or Bold: 3:1 minimum.
+- [ ] **Touch Targets**: All interactive elements are at least 44x44px.
+- [ ] **Focus Rings**: Visible focus state (`2px` solid ring) for keyboard users.
+- [ ] **Alt Text**: All meaningful icons and images have `aria-label` or `alt`.
+- [ ] **State Indicators**: Don't rely on color alone (use shapes/icons for errors/success).
 
 ### Recommended
 
-- [ ] Support `prefers-reduced-motion`
-- [ ] Support `prefers-contrast: more`
-- [ ] Provide skip-to-content link
-- [ ] Use semantic HTML elements
-- [ ] Group related form fields with fieldset/legend
+- [ ] Support `prefers-reduced-motion` for animations.
+- [ ] Support Dynamic Type (rem-based patterns).
+- [ ] Ensure "Liquid Glass" materials do not compromise readability (use background blur to separate text from noisy backgrounds).
 
 ---
 

@@ -44,8 +44,18 @@ body {
     @apply bg-studio-900/80 backdrop-blur-md border border-studio-800/50;
   }
 
+  /* HIG Liquid Glass */
+  .liquid-glass {
+    @apply bg-white/5 backdrop-blur-lg border border-white/10 shadow-sm transition-all duration-300;
+  }
+
+  .liquid-glass-tinted {
+    @apply liquid-glass bg-accent-vulkan/20 border-accent-vulkan/30;
+  }
+
+  /* Legacy aliases (can be refactored later) */
   .glass-card {
-    @apply bg-studio-850/60 backdrop-blur-md border border-white/5 rounded-xl shadow-elevation-1 transition-all duration-300;
+    @apply liquid-glass rounded-xl shadow-elevation-1;
   }
 
   .glass-card-hover {

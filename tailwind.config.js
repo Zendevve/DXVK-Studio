@@ -21,7 +21,27 @@ module.exports = {
           200: '#e4e4e7',  // Bright text
           100: '#fafafa',  // White text
         },
+        // Apple HIG System Colors (Light/Dark compliant values - using Light as base for Brand)
+        system: {
+          red: '#FF383C',
+          orange: '#FF8D28',
+          yellow: '#FFCC00',
+          green: '#34C759',
+          mint: '#00C8B3',
+          teal: '#00C3D0',
+          cyan: '#00C0E8',
+          blue: '#0088FF',
+          indigo: '#6155F5',
+          purple: '#CB30E0',
+          pink: '#FF2D55',
+          brown: '#AC7F5E',
+          gray: '#8E8E93',
+        },
         accent: {
+          // Primary Brand Accent: Vulkan Red
+          DEFAULT: '#ef4444',
+          main: '#ef4444',
+
           vulkan: '#ef4444',   // Vivid Red (Tailwind Red-500)
           dark: '#dc2626',     // Red-600
           light: '#f87171',    // Red-400
@@ -29,10 +49,11 @@ module.exports = {
           pressed: '#b91c1c',  // Red-700
           glow: 'rgba(239, 68, 68, 0.5)', // Red glow
 
-          success: '#10b981',  // Green
-          warning: '#f59e0b',  // Amber
-          danger: '#ef4444',   // Red (Same as Vulkan for consistency in errors)
-          info: '#3b82f6',     // Blue
+          // Functional Accents
+          success: '#34C759',  // HIG Green
+          warning: '#FF8D28',  // HIG Orange
+          danger: '#FF383C',   // HIG Red
+          info: '#0088FF',     // HIG Blue
         }
       },
       fontFamily: {
@@ -58,6 +79,22 @@ module.exports = {
       backdropBlur: {
         'xs': '2px',
         'md': '12px',
+        'lg': '20px', // For Liquid Glass
+        'xl': '40px', // For Heavy Glass
+      },
+      fontSize: {
+        // HIG Typography Scale
+        'large-title': ['34px', { lineHeight: '1.2', fontWeight: '700' }],
+        'title-1': ['28px', { lineHeight: '1.2', fontWeight: '600' }],
+        'title-2': ['22px', { lineHeight: '1.3', fontWeight: '600' }],
+        'title-3': ['20px', { lineHeight: '1.3', fontWeight: '600' }],
+        'headline': ['17px', { lineHeight: '1.3', fontWeight: '600' }],
+        'body': ['17px', { lineHeight: '1.5', fontWeight: '400' }],
+        'callout': ['16px', { lineHeight: '1.4', fontWeight: '400' }],
+        'subhead': ['15px', { lineHeight: '1.4', fontWeight: '400' }],
+        'footnote': ['13px', { lineHeight: '1.3', fontWeight: '400' }],
+        'caption-1': ['12px', { lineHeight: '1.3', fontWeight: '400' }],
+        'caption-2': ['11px', { lineHeight: '1.3', fontWeight: '400' }],
       },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
