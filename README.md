@@ -207,7 +207,7 @@ npm run build        # Production build
 
 ## Redistribution Policy
 
-This software is licensed under AGPL-3.0 with additional terms (see `LICENSE.ADDITIONAL`).
+This software is licensed under Source Available License.
 
 ### What You May Do
 
