@@ -42,7 +42,7 @@ DXVK is a translation layer that converts DirectX calls to Vulkan. It can **boos
 
 ## Installation
 
-> **License Notice**: Source code is free and open under AGPL-3.0 with additional terms. **Binary distribution is prohibited.** Only the copyright holder (Zendevve) may distribute compiled binaries. Users may build from source for personal use only, or purchase official builds. See LICENSE.ADDITIONAL for complete terms.
+> **License Notice**: Source code is free and open under Source Available License. **Binary distribution is prohibited.** Only the copyright holder (Zendevve) may distribute compiled binaries. Users may build from source for personal use only, or purchase official builds. See LICENSE for complete terms.
 
 ---
 
