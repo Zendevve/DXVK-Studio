@@ -7,7 +7,7 @@
 A Windows desktop app that makes [DXVK](https://github.com/doitsujin/dxvk) easy for everyone.
 
 [![Release](https://img.shields.io/github/v/release/Zendevve/dxvk-studio?style=flat-square&color=0969da)](https://github.com/Zendevve/dxvk-studio/releases)
-[![Downloads](https://img.shields.io/github/downloads/Zendevve/dxvk-studio/total?style=flat-square&color=2da44e)](https://github.com/Zendevve/dxvk-studio/releases)
+[![Downloads](https://img.shields.io/github/downloads/Zendevve/dxvk-studio/total?style=flat-square&color=2da44e)](https://buymeacoffee.com/zendevve/e/530420)
 [![License](https://img.shields.io/badge/license-AGPLv3-blue?style=flat-square)](LICENSE)
 [![Built with Electron](https://img.shields.io/badge/built%20with-Electron-47848f?style=flat-square&logo=electron&logoColor=white)](https://electronjs.org)
 [![Discord](https://img.shields.io/badge/Discord-Join%20Server-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.com/invite/q5mSx7uFuC)
@@ -48,7 +48,7 @@ DXVK is a translation layer that converts DirectX calls to Vulkan. It can **boos
 
 ### Option 1: Buy Pre-Built (Recommended)
 
-**[Get DXVK Studio on Gumroad →](https://guinto2.gumroad.com/l/dxvkstudio)**
+**[Get DXVK Studio on Buy me a Coffee →](https://buymeacoffee.com/zendevve/e/530420)**
 
 Download, run the installer, done. Supports ongoing development.
 
@@ -251,8 +251,7 @@ Unauthorized distribution may result in:
 ### Official Distribution
 
 Authorized sources for compiled binaries:
-- [Official Gumroad Store](https://guinto2.gumroad.com/l/dxvkstudio)
-- [Official GitHub Releases](https://github.com/Zendevve/dxvk-studio/releases) (only releases posted by @Zendevve)
+- [Official Buy me a Coffee Store](https://buymeacoffee.com/zendevve/e/530420)
 
 Any other source is unauthorized.
 
