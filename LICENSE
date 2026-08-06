@@ -1,25 +1,59 @@
-DXVK STUDIO SOURCE-AVAILABLE LICENSE
+COPYRIGHT NOTICE AND LIMITED PERSONAL USE TERMS
 
-Copyright (C) 2024-2026 Zendevve. All Rights Reserved.
+Project: DXVK Studio Community Edition
+Description: A modern control panel for managing DXVK and VKD3D installations across your game library.
+Copyright (c) 2024-2026 Zendevve. All rights reserved.
 
-1. PERMISSIONS
-   You are granted a non-exclusive, non-transferable license to:
-   a) View, read, and study the Source Code.
-   b) Modify the Source Code for your own personal, private, and non-commercial use.
-   c) Compile and execute the Software for your own personal, private, and non-commercial use.
+Source: https://github.com/Zendevve/DXVK-Studio-CE
 
-2. RESTRICTIONS
-   You may NOT:
-   a) Use the Software or Source Code form for any Commercial Purpose. "Commercial Purpose" includes but is not limited to:
-      - Selling, renting, or licensing the Software.
-      - Using the Software to provide a service to third parties for a fee.
-      - Distributing the Software as part of a commercial product.
-   b) Redistribute, publish, or share modified versions of the Software or Source Code (including forks) to any third party.
-   c) Redistribute, publish, or share compiled binaries of the Software, whether modified or unmodified, without express written permission from the Copyright Holder.
-   d) Remove or alter any copyright, trademark, or proprietary notices.
+1. OWNERSHIP
 
-3. CONTRIBUTIONS
-   Any modifications or contributions you make and submit to the official repository (e.g., via Pull Request) are assigned to the Copyright Holder, who allows their use under these terms.
+DXVK Studio Community Edition is proprietary software owned by the copyright holder, except for
+third-party components, vendor binaries, trademarks, and external API references
+which remain the property of their respective owners.
 
-4. DISCLAIMER
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+2. PERMITTED USE
+
+You may download, view, study, fork, and install this software solely for
+personal, non-commercial use.
+
+Any copying is permitted only as technically necessary for downloading,
+viewing, forking, installing, backing up, or using the software as distributed
+by the copyright holder.
+
+3. RESTRICTIONS
+
+Without prior written permission from the copyright holder, you may not:
+
+- Modify, edit, rename, reorganize, adapt, or create derivative works from
+  this software or any part of its source code.
+- Redistribute, mirror, re-upload, publish, or host this software or modified
+  versions of it on third-party platforms.
+- Sell, rent, sublicense, monetize, bundle, or include this software in
+  products, distributions, services, or commercial offerings.
+- Copy, extract, reuse, port, or incorporate any part of the source code,
+  architecture, logic, design, or original assets into another project.
+- Remove copyright notices, change attribution, or claim authorship of any
+  part of this software.
+
+4. FORKS
+
+Forking is permitted only for personal viewing, study, backup, or installation
+purposes. Forks may not be modified, redistributed, published as derivative
+works, or used as the basis for another project without prior written
+permission.
+
+5. EMBEDDED LIBRARIES
+
+Embedded libraries authored by the copyright holder, if any, are proprietary and
+may be subject to additional restrictions in their own license or copyright notice.
+
+6. NO WARRANTY
+
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED. TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE COPYRIGHT HOLDER SHALL
+NOT BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM THE USE
+OF THIS SOFTWARE.
+
+Any use outside the permissions granted above is prohibited unless explicitly
+authorized in writing by the copyright holder.
