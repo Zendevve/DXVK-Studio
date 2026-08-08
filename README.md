@@ -8,7 +8,7 @@ A Windows desktop app that makes [DXVK](https://github.com/doitsujin/dxvk) easy 
 
 [![Release](https://img.shields.io/github/v/release/Zendevve/dxvk-studio?style=flat-square&color=0969da)](https://github.com/Zendevve/dxvk-studio/releases)
 [![Downloads](https://img.shields.io/github/downloads/Zendevve/dxvk-studio/total?style=flat-square&color=2da44e)](https://buymeacoffee.com/zendevve/e/530420)
-[![License](https://img.shields.io/badge/license-AGPLv3-blue?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/license-Proprietary-red?style=flat-square)](#license)
 [![Built with Electron](https://img.shields.io/badge/built%20with-Electron-47848f?style=flat-square&logo=electron&logoColor=white)](https://electronjs.org)
 [![Discord](https://img.shields.io/badge/Discord-Join%20Server-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.com/invite/q5mSx7uFuC)
 
@@ -22,7 +22,7 @@ A Windows desktop app that makes [DXVK](https://github.com/doitsujin/dxvk) easy 
 
 ## What does it do?
 
-DXVK is a translation layer that converts DirectX calls to Vulkan. It can **boost FPS in older games** and fix compatibility issues on modern systems. The problem? Installing it manually is tedious—downloading archives, picking the right DLLs, editing config files.
+DXVK is a translation layer that converts DirectX calls to Vulkan. It can **boost FPS in older games** and fix compatibility issues on modern systems. The problem? Installing it manually is tedious and technical.
 
 **DXVK Studio automates all of that.** Point it at your games, pick a version, click install. Done.
 
@@ -42,7 +42,7 @@ DXVK is a translation layer that converts DirectX calls to Vulkan. It can **boos
 
 ## Installation
 
-> **License Notice**: Source code is free and open under Source Available License. **Binary distribution is prohibited.** Only the copyright holder (Zendevve) may distribute compiled binaries. Users may build from source for personal use only, or purchase official builds. See LICENSE for complete terms.
+> **License Notice**: This software is proprietary. Building, modification, and redistribution rights are reserved by the copyright holder unless explicitly granted.
 
 ---
 
@@ -56,7 +56,7 @@ Download, run the installer, done. Supports ongoing development.
 - Windows 10/11 (64-bit)
 - Vulkan-capable GPU (NVIDIA, AMD, or Intel Arc)
 
-> **⚠️ Note:** The installer is not code-signed (code signing certificates cost $200-400/year). Windows SmartScreen may show a warning on first run—click **"More info" → "Run anyway"** to proceed. This is safe and expected for indie software.
+> **⚠️ Note:** The installer is not code-signed (code signing certificates cost $200-400/year). Windows SmartScreen may show a warning on first run—click **"More info" → "Run anyway"** to proceed.
 
 ---
 
@@ -76,7 +76,7 @@ You must have the following installed and properly configured:
 | **Python** | 3.10+ | [Download](https://python.org) — required by node-gyp for native modules |
 | **Visual Studio Build Tools** | 2022 | [Download](https://visualstudio.microsoft.com/visual-cpp-build-tools/) — required for compiling native Node.js addons |
 
-> **⚠️ Important:** The Visual Studio Build Tools installation requires selecting the **"Desktop development with C++"** workload, which includes the MSVC compiler, Windows SDK, and CMake tools. This is approximately **6-8 GB** of disk space.
+> **⚠️ Important:** The Visual Studio Build Tools installation requires selecting the **"Desktop development with C++"** workload, which includes the MSVC compiler, Windows SDK, and CMake tools.
 
 #### Native Module Dependencies
 
@@ -207,39 +207,22 @@ npm run build        # Production build
 
 ## Redistribution Policy
 
-This software is licensed under Source Available License.
+This software is proprietary.
 
 ### What You May Do
 
-- ✅ Build from source for **your personal, non-commercial use only**
-- ✅ Modify the source code for your own private purposes
-- ✅ Distribute **only the uncompiled source code** (in compliance with AGPL-3.0)
-- ✅ Contribute improvements to the official repository via pull requests
-- ✅ Help others by sharing build instructions (not pre-built binaries)
+- ✅ Use the software for personal use as permitted by the copyright holder
+- ✅ Submit pull requests to the official repository
 
 ### What Is Prohibited
 
-- ❌ Distributing compiled binaries, installers, or executable files
-- ❌ Hosting pre-built releases for download on any platform
-- ❌ Creating "repacks" or unofficial builds
-- ❌ Sharing .exe files via any method (file hosts, Discord, forums, torrents)
-- ❌ Building binaries for others (including friends or family)
-- ❌ Posting compiled releases on GitHub or elsewhere
-
-### Retroactive Enforcement
-
-These terms apply retroactively to all versions. If you distributed binaries before 2026-01-02:
-
-1. You must remove all distributed binaries within 7 days
-2. Delete downloads from all platforms (GitHub Releases, file hosts, etc.)
-3. Notify recipients that distribution was unauthorized
-4. Cease all future binary distribution
-
-Failure to comply will be treated as willful copyright infringement.
+- ❌ Distributing compiled binaries, installers, or executable files without explicit permission
+- ❌ Hosting pre-built releases for download on any platform without explicit permission
+- ❌ Creating "repacks" or unofficial public builds without explicit permission
 
 ### Enforcement
 
-Binary distribution rights are exclusively reserved to the copyright holder (Zendevve).
+Distribution rights are exclusively reserved to the copyright holder (Zendevve).
 
 Unauthorized distribution may result in:
 - DMCA takedown notices
@@ -253,7 +236,7 @@ Unauthorized distribution may result in:
 Authorized sources for compiled binaries:
 - [Official Buy me a Coffee Store](https://buymeacoffee.com/zendevve/e/530420)
 
-Any other source is unauthorized.
+Any other source is unauthorized unless explicitly approved by the copyright holder.
 
 ---
 
@@ -273,12 +256,9 @@ Join the [Discord server](https://discord.com/invite/q5mSx7uFuC) to ask question
 
 ## License
 
-[AGPL-3.0](LICENSE) with [Additional Terms](LICENSE.ADDITIONAL)
+Proprietary — All rights reserved.
 
-**Source code**: Open and free under AGPL-3.0
-**Compiled binaries**: Distribution rights reserved to copyright holder only
-
-You must share your source code changes if you distribute. Binary redistribution is prohibited under the additional terms.
+This repository and its source code are not licensed under AGPL. No rights are granted except as explicitly provided by the copyright holder.
 
 ---
 
