@@ -8,7 +8,7 @@ A Windows desktop app that makes [DXVK](https://github.com/doitsujin/dxvk) easy 
 
 [![Release](https://img.shields.io/github/v/release/Zendevve/dxvk-studio?style=flat-square&color=0969da)](https://github.com/Zendevve/dxvk-studio/releases)
 [![Downloads](https://img.shields.io/github/downloads/Zendevve/dxvk-studio/total?style=flat-square&color=2da44e)](https://buymeacoffee.com/zendevve/e/530420)
-[![License](https://img.shields.io/badge/license-Proprietary-red?style=flat-square)](#license)
+[![License](https://img.shields.io/badge/license-Source%20Available-blue?style=flat-square)](LICENSE)
 [![Built with Electron](https://img.shields.io/badge/built%20with-Electron-47848f?style=flat-square&logo=electron&logoColor=white)](https://electronjs.org)
 [![Discord](https://img.shields.io/badge/Discord-Join%20Server-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.com/invite/q5mSx7uFuC)
 
@@ -17,6 +17,12 @@ A Windows desktop app that makes [DXVK](https://github.com/doitsujin/dxvk) easy 
 <img src="docs/screenshot.png" alt="DXVK Studio" width="700">
 
 </div>
+
+---
+
+## ⚠️ No Longer Maintained
+
+**DXVK Studio Community Edition is no longer actively developed.** Development has moved to **DXVK Studio Enterprise Edition (EE)** — the free Community Edition remains available here as the final release, but issues, pull requests, and releases are no longer being handled in this repository. The software is provided as-is under the license stated at the bottom of this page.
 
 ---
 
@@ -42,7 +48,7 @@ DXVK is a translation layer that converts DirectX calls to Vulkan. It can **boos
 
 ## Installation
 
-> **License Notice**: This software is proprietary. Building, modification, and redistribution rights are reserved by the copyright holder unless explicitly granted.
+> **License Notice**: This software is source-available under the [DXVK Studio Source-Available License v2.0](LICENSE). Personal use, study, and modification are permitted; commercial use and binary redistribution require explicit written permission from the copyright holder.
 
 ---
 
@@ -207,7 +213,7 @@ npm run build        # Production build
 
 ## Redistribution Policy
 
-This software is proprietary.
+This software is source-available under the [DXVK Studio Source-Available License v2.0](LICENSE). The rights and restrictions below mirror that license.
 
 ### What You May Do
 
@@ -256,9 +262,25 @@ Join the [Discord server](https://discord.com/invite/q5mSx7uFuC) to ask question
 
 ## License
 
-Proprietary — All rights reserved.
+Licensed under the **[DXVK Studio Source-Available License v2.0](LICENSE)** — © 2024–2026 Zendevve. All rights reserved.
 
-This repository and its source code are not licensed under AGPL. No rights are granted except as explicitly provided by the copyright holder.
+This is a **source-available** license, not an open-source/OSI license. In plain terms:
+
+**You may:**
+- View, study, and modify the source code for personal, non-commercial use
+- Compile and run the software for your own personal, non-commercial use
+- Contribute improvements via pull requests to the official repository
+
+**You may not:**
+- Use the software or source code for any **commercial purpose** without explicit written permission from the copyright holder (selling, licensing, providing it as a paid service, bundling it in a commercial product)
+- **Redistribute compiled binaries** — modified or not, including hosting installers or sharing builds with third parties — without explicit written permission
+- Redistribute modified source code to third parties without permission
+- Create a **derivative product that substitutes for or competes** with the official product
+- Remove or alter copyright, trademark, or proprietary notices
+
+**Enforcement:** unauthorized use or distribution may result in DMCA takedown notices, cease-and-desist letters, and copyright infringement litigation.
+
+For commercial licensing inquiries, contact [Zendevve](https://github.com/Zendevve) or the [Discord server](https://discord.com/invite/q5mSx7uFuC).
 
 ---
 
