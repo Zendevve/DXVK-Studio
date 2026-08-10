@@ -8,7 +8,7 @@ A Windows desktop app that makes [DXVK](https://github.com/doitsujin/dxvk) easy 
 
 [![Release](https://img.shields.io/github/v/release/Zendevve/dxvk-studio?style=flat-square&color=0969da)](https://github.com/Zendevve/dxvk-studio/releases)
 [![Downloads](https://img.shields.io/github/downloads/Zendevve/dxvk-studio/total?style=flat-square&color=2da44e)](https://buymeacoffee.com/zendevve/e/530420)
-[![License](https://img.shields.io/badge/license-Source%20Available-blue?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/license-Proprietary-red?style=flat-square)](#license)
 [![Built with Electron](https://img.shields.io/badge/built%20with-Electron-47848f?style=flat-square&logo=electron&logoColor=white)](https://electronjs.org)
 [![Discord](https://img.shields.io/badge/Discord-Join%20Server-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.com/invite/q5mSx7uFuC)
 
@@ -48,7 +48,7 @@ DXVK is a translation layer that converts DirectX calls to Vulkan. It can **boos
 
 ## Installation
 
-> **License Notice**: This software is source-available under the [DXVK Studio Source-Available License v2.0](LICENSE). Personal use, study, and modification are permitted; commercial use and binary redistribution require explicit written permission from the copyright holder.
+> **License Notice**: This software is proprietary. See the [LICENSE](LICENSE) file for the full terms: personal, non-commercial use only — no modification, redistribution, or reuse of the code without prior written permission from the copyright holder.
 
 ---
 
@@ -213,12 +213,11 @@ npm run build        # Production build
 
 ## Redistribution Policy
 
-This software is source-available under the [DXVK Studio Source-Available License v2.0](LICENSE). The rights and restrictions below mirror that license.
+This software is proprietary. The rights and restrictions below mirror the [LICENSE](LICENSE) file.
 
 ### What You May Do
 
-- ✅ Use the software for personal use as permitted by the copyright holder
-- ✅ Submit pull requests to the official repository
+- ✅ Download, view, study, fork, and install the software for personal, non-commercial use
 
 ### What Is Prohibited
 
@@ -248,9 +247,7 @@ Any other source is unauthorized unless explicitly approved by the copyright hol
 
 ## Contributing
 
-Pull requests are welcome and encouraged! If you fork this project, please submit your improvements back to the main repository to keep the community unified.
-
-See [CHANGELOG.md](CHANGELOG.md) for version history.
+This repository is **no longer maintained** — development has moved to DXVK Studio Enterprise Edition. Pull requests and issues are not being accepted here.
 
 ---
 
@@ -262,25 +259,26 @@ Join the [Discord server](https://discord.com/invite/q5mSx7uFuC) to ask question
 
 ## License
 
-Licensed under the **[DXVK Studio Source-Available License v2.0](LICENSE)** — © 2024–2026 Zendevve. All rights reserved.
+Proprietary — © 2024–2026 Zendevve. All rights reserved.
 
-This is a **source-available** license, not an open-source/OSI license. In plain terms:
+DXVK Studio Community Edition is licensed under the terms in the **[LICENSE](LICENSE)** file ("COPYRIGHT NOTICE AND LIMITED PERSONAL USE TERMS"). This is **not** an open-source license. In plain terms:
 
 **You may:**
-- View, study, and modify the source code for personal, non-commercial use
-- Compile and run the software for your own personal, non-commercial use
-- Contribute improvements via pull requests to the official repository
+- Download, view, study, fork, and install the software for personal, non-commercial use
+- Make copies only as technically necessary for downloading, installing, backing up, or using the software as distributed
 
-**You may not:**
-- Use the software or source code for any **commercial purpose** without explicit written permission from the copyright holder (selling, licensing, providing it as a paid service, bundling it in a commercial product)
-- **Redistribute compiled binaries** — modified or not, including hosting installers or sharing builds with third parties — without explicit written permission
-- Redistribute modified source code to third parties without permission
-- Create a **derivative product that substitutes for or competes** with the official product
-- Remove or alter copyright, trademark, or proprietary notices
+**You may not (without prior written permission from the copyright holder):**
+- Modify, adapt, or create derivative works from the software or its source code
+- Redistribute, mirror, re-upload, publish, or host the software or modified versions on any platform
+- Sell, rent, sublicense, bundle, or include it in any commercial offering
+- Copy, extract, reuse, port, or incorporate any part of the source code, architecture, logic, design, or original assets into another project
+- Remove copyright notices, change attribution, or claim authorship
 
-**Enforcement:** unauthorized use or distribution may result in DMCA takedown notices, cease-and-desist letters, and copyright infringement litigation.
+**Forks** are permitted only for personal viewing, study, backup, or installation — forks may not be modified, redistributed, or used as the basis for another project without prior written permission.
 
-For commercial licensing inquiries, contact [Zendevve](https://github.com/Zendevve) or the [Discord server](https://discord.com/invite/q5mSx7uFuC).
+Any use outside these permissions is prohibited unless explicitly authorized in writing by the copyright holder.
+
+For permission requests, contact [Zendevve](https://github.com/Zendevve) or the [Discord server](https://discord.com/invite/q5mSx7uFuC).
 
 ---
 
